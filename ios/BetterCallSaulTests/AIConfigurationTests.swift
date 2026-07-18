@@ -2,7 +2,7 @@ import XCTest
 @testable import BetterCallSaul
 
 final class AIConfigurationTests: XCTestCase {
-    func testConfigurationReportsBothProvidersAndMasksKeys() throws {
+    func testConfigurationReportsBothBundledProviders() throws {
         let configuration = try AIConfiguration(values: [
             "GeminiAPIKey": "gemini-test-key",
             "GeminiModel": "gemini-3.5-flash",
@@ -12,8 +12,8 @@ final class AIConfigurationTests: XCTestCase {
 
         XCTAssertEqual(configuration.geminiModel, "gemini-3.5-flash")
         XCTAssertEqual(configuration.deepSeekModel, "deepseek-v4-pro")
-        XCTAssertEqual(configuration.maskedGeminiKey, "••••-key")
-        XCTAssertEqual(configuration.maskedDeepSeekKey, "••••-key")
+        XCTAssertEqual(configuration.geminiAPIKey, "gemini-test-key")
+        XCTAssertEqual(configuration.deepSeekAPIKey, "deepseek-test-key")
     }
 
     func testMissingGeminiKeyProducesConfigurationError() {

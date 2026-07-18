@@ -125,9 +125,6 @@ struct HomeView: View {
                         .font(.bcsBody(13))
                         .foregroundStyle(BCSColor.secondary)
                 }
-                SaulPhoneTile()
-                    .scaleEffect(0.84)
-                    .frame(width: 44, height: 44)
             }
             .frame(minHeight: 62)
             .accessibilityElement(children: .combine)

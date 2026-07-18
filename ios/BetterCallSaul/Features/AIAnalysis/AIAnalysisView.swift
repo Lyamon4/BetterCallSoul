@@ -21,9 +21,6 @@ struct AIAnalysisView: View {
                     .foregroundStyle(BCSColor.secondary)
                     .padding(.top, 10)
 
-                providerLine
-                    .padding(.top, 18)
-
                 if isAnalyzing {
                     progressPanel
                         .padding(.top, 12)
@@ -83,24 +80,6 @@ struct AIAnalysisView: View {
         .frame(minHeight: 44)
     }
 
-    private var providerLine: some View {
-        HStack(spacing: 10) {
-            Circle()
-                .fill(workflow.activeProvider == .local ? BCSColor.secondary : BCSColor.yellow)
-                .frame(width: 8, height: 8)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(workflow.activeProvider.displayName)
-                    .font(.bcsBody(15, weight: .medium))
-                Text(providerCaption)
-                    .font(.bcsBody(12))
-                    .foregroundStyle(BCSColor.secondary)
-            }
-            Spacer()
-        }
-        .padding(.vertical, 10)
-        .overlay(alignment: .bottom) { BCSDivider() }
-    }
-
     private var progressPanel: some View {
         HStack(spacing: 14) {
             ProgressView()
@@ -123,10 +102,6 @@ struct AIAnalysisView: View {
 
     private var analysisContent: some View {
         VStack(alignment: .leading, spacing: 14) {
-            if case .fallback(let message) = workflow.aiState {
-                fallbackNotice(message)
-            }
-
             if let analysis = workflow.caseAnalysis {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("ЧТО ДЕЛАТЬ")
@@ -198,20 +173,6 @@ struct AIAnalysisView: View {
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
-    private func fallbackNotice(_ message: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Продолжаем локально")
-                .font(.bcsBody(14, weight: .semibold))
-            Text(message)
-                .font(.bcsBody(12))
-                .foregroundStyle(BCSColor.secondary)
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(BCSColor.paleYellow)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-
     private func answerBinding(for question: AIQuestion) -> Binding<String> {
         Binding(
             get: { workflow.answers[question.id] ?? "" },
@@ -237,15 +198,7 @@ struct AIAnalysisView: View {
 
     private var progressTitle: String {
         workflow.aiState == .analyzingEvidence
-            ? "Gemini читает документ"
-            : "DeepSeek разбирает ситуацию"
-    }
-
-    private var providerCaption: String {
-        switch workflow.activeProvider {
-        case .gemini: "Визуальный анализ документа"
-        case .deepSeek: "Текстовый разбор и следующий шаг"
-        case .local: "Резервный шаблон без сети"
-        }
+            ? "Проверяем документ"
+            : "Разбираем ситуацию"
     }
 }

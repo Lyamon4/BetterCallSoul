@@ -118,7 +118,7 @@ struct EvidenceView: View {
             Image(systemName: "eye")
                 .font(.system(size: 14, weight: .semibold))
                 .padding(.top, 2)
-            Text("Выбранный документ будет передан Gemini для визуального анализа. DeepSeek получит только распознанный и подтверждённый текст.")
+            Text("Загружая документ, вы разрешаете обработать его для извлечения данных и подготовки обращения.")
                 .font(.bcsBody(12))
                 .foregroundStyle(BCSColor.secondary)
                 .lineSpacing(2)

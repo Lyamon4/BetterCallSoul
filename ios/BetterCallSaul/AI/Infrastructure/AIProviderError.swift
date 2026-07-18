@@ -28,30 +28,20 @@ enum AIProviderError: Error, Equatable, LocalizedError, Sendable {
 
     var errorDescription: String? {
         switch self {
-        case .missingKey(let provider):
-            "Не добавлен API-ключ для \(provider.displayName)."
-        case .invalidConfiguration(let message):
-            "Ошибка конфигурации: \(message)"
-        case .authenticationFailed(let provider):
-            "\(provider.displayName) отклонил API-ключ."
-        case .quotaExceeded(let provider):
-            "У \(provider.displayName) закончился доступный лимит."
-        case .invalidResponse(let provider):
-            "\(provider.displayName) вернул некорректный ответ."
+        case .missingKey:
+            "Сервис обработки временно недоступен."
+        case .invalidConfiguration:
+            "Сервис обработки настроен некорректно."
+        case .authenticationFailed:
+            "Не удалось подключиться к сервису обработки."
+        case .quotaExceeded:
+            "Сервис обработки временно перегружен."
+        case .invalidResponse:
+            "Не удалось обработать данные. Попробуйте ещё раз."
         case .payloadTooLarge(let maximumMB):
             "Файл слишком большой. Максимум — \(maximumMB) МБ."
         case .transport:
-            "Не удалось связаться с AI-сервисом."
-        }
-    }
-}
-
-extension AIProvider {
-    var displayName: String {
-        switch self {
-        case .gemini: "Gemini"
-        case .deepSeek: "DeepSeek"
-        case .local: "Локальный режим"
+            "Не удалось связаться с сервисом обработки."
         }
     }
 }

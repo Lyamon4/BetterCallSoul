@@ -13,29 +13,16 @@ struct AIConfiguration: Equatable, Sendable {
         deepSeekModel = try Self.requiredModel("DeepSeekModel", in: values)
     }
 
-    static func bundled(
-        bundle: Bundle = .main,
-        secrets: KeychainSecretStore = .init()
-    ) throws -> Self {
+    static func bundled(bundle: Bundle = .main) throws -> Self {
         let info = bundle.infoDictionary ?? [:]
-        var values = ["GeminiAPIKey", "GeminiModel", "DeepSeekAPIKey", "DeepSeekModel"]
+        let values = ["GeminiAPIKey", "GeminiModel", "DeepSeekAPIKey", "DeepSeekModel"]
             .reduce(into: [String: String]()) { result, key in
                 if let value = info[key] as? String {
                     result[key] = value
                 }
             }
-
-        if let override = secrets.read(account: KeychainSecretStore.geminiAccount), !override.isEmpty {
-            values["GeminiAPIKey"] = override
-        }
-        if let override = secrets.read(account: KeychainSecretStore.deepSeekAccount), !override.isEmpty {
-            values["DeepSeekAPIKey"] = override
-        }
         return try AIConfiguration(values: values)
     }
-
-    var maskedGeminiKey: String { Self.mask(geminiAPIKey) }
-    var maskedDeepSeekKey: String { Self.mask(deepSeekAPIKey) }
 
     private static func required(
         _ key: String,
@@ -53,9 +40,5 @@ struct AIConfiguration: Equatable, Sendable {
             throw AIProviderError.invalidConfiguration("Не указана модель \(key).")
         }
         return value
-    }
-
-    private static func mask(_ value: String) -> String {
-        "••••" + value.suffix(4)
     }
 }

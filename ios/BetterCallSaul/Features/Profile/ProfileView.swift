@@ -6,50 +6,23 @@ struct ProfileView: View {
             VStack(alignment: .leading, spacing: 0) {
                 BCSEditorialTitle(text: "Профиль")
 
-                Text("Настройки локального приложения")
-                    .font(.bcsBody())
+                Text("Алим")
+                    .font(.bcsEditorial(28))
+                    .padding(.top, 24)
+
+                Text("Казахстан · Русский")
+                    .font(.bcsBody(15))
                     .foregroundStyle(BCSColor.secondary)
-                    .padding(.top, 8)
+                    .padding(.top, 4)
 
-                NavigationLink {
-                    AISettingsView()
-                } label: {
-                    HStack(spacing: 14) {
-                        Image(systemName: "sparkles.rectangle.stack.fill")
-                            .font(.system(size: 18, weight: .semibold))
-                            .frame(width: 36, height: 36)
-                            .background(BCSColor.paleYellow)
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text("AI-провайдеры")
-                                .font(.bcsBody(16, weight: .medium))
-                            Text("Gemini · DeepSeek · Keychain")
-                                .font(.bcsBody(12))
-                                .foregroundStyle(BCSColor.secondary)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(BCSColor.secondary)
-                    }
-                    .padding(14)
-                    .foregroundStyle(BCSColor.ink)
-                    .background(BCSColor.surface)
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(BCSColor.divider))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                }
-                .accessibilityIdentifier("AI-провайдеры")
-                .padding(.top, 20)
+                BCSDivider()
+                    .padding(.top, 24)
 
-                HStack {
-                    Label("S’all configured", systemImage: "phone.fill")
-                    Spacer()
-                    Text("BCS / 2026")
-                        .font(.bcsMeta(10))
-                }
-                .font(.system(size: 12, design: .serif))
-                .foregroundStyle(BCSColor.secondary)
-                .padding(.top, 14)
+                Text("Документы создаются на основании указанных вами данных. Перед отправкой проверяйте факты и получателя.")
+                    .font(.bcsBody(14))
+                    .foregroundStyle(BCSColor.secondary)
+                    .lineSpacing(3)
+                    .padding(.top, 18)
             }
             .padding(20)
             .padding(.bottom, 96)

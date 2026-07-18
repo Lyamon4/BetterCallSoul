@@ -20,7 +20,7 @@ struct LocalLegalTextGenerator: LegalTextGenerating {
                 ? "Нужно уточнить обстоятельства обращения."
                 : request.narrative,
             recommendedAction: recommendation(for: request.caseType),
-            warnings: ["Использован локальный шаблон — проверьте формулировки перед отправкой."],
+            warnings: ["Проверьте формулировки и факты перед отправкой."],
             questions: questions
         )
     }
