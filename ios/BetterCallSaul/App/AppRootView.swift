@@ -15,7 +15,7 @@ struct AppRootView: View {
             .navigationDestination(for: AppRoute.self) { route in
                 switch route {
                 case .evidence:
-                    Text("Добавьте доказательства")
+                    EvidenceView(router: router, legalCase: DemoFixtures.activeCase)
                 case .document:
                     Text("Претензия готова")
                 }
