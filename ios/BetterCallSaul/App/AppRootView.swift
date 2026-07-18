@@ -30,26 +30,12 @@ struct AppRootView: View {
         case .home:
             HomeView(router: router)
         case .cases:
-            StaticTabScreen(title: "Обращения")
+            CasesView(legalCase: DemoFixtures.activeCase)
         case .tools:
-            StaticTabScreen(title: "Инструменты")
+            ToolsView(items: DemoFixtures.tools)
         case .profile:
             ProfileView()
         }
-    }
-}
-
-private struct StaticTabScreen: View {
-    let title: String
-
-    var body: some View {
-        Text(title)
-            .font(.bcsEditorial(44))
-            .foregroundStyle(BCSColor.ink)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(24)
-            .padding(.bottom, 80)
-            .background(BCSColor.canvas)
     }
 }
 

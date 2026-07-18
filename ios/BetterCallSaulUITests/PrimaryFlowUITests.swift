@@ -48,4 +48,22 @@ final class PrimaryFlowUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts["Документ подготовлен"].waitForExistence(timeout: 2))
     }
+
+    func testToolsShowsHonestCapabilitiesAndSaulCallout() {
+        app.buttons["tab.tools"].tap()
+
+        XCTAssertTrue(app.staticTexts["Инструменты"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["Временный номер"].exists)
+        XCTAssertTrue(app.staticTexts["DEMO"].exists)
+        XCTAssertTrue(app.staticTexts["КОНЦЕПТ"].exists)
+        XCTAssertTrue(app.staticTexts["Нужен план?\nПозвони Солу."].exists)
+    }
+
+    func testCasesShowsActiveCaseAndDeadline() {
+        app.buttons["tab.cases"].tap()
+
+        XCTAssertTrue(app.staticTexts["Возврат за подписку"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["24 900 ₸"].exists)
+        XCTAssertTrue(app.staticTexts["Ответ до 28 июля"].exists)
+    }
 }
