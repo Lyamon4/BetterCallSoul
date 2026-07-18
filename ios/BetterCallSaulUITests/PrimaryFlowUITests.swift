@@ -37,7 +37,7 @@ final class PrimaryFlowUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Претензия готова"].waitForExistence(timeout: 2))
     }
 
-    func testDocumentConfirmationShowsSuccessState() {
+    func testDocumentExportCreatesRealPDFReadyState() {
         app.buttons["caseType.subscription"].tap()
         app.buttons["continueToDocumentButton"].tap()
 
@@ -46,7 +46,8 @@ final class PrimaryFlowUITests: XCTestCase {
 
         app.buttons["sendDocumentButton"].tap()
 
-        XCTAssertTrue(app.staticTexts["Документ подготовлен"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["PDF создан"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["Документ готов к отправке."].exists)
     }
 
     func testToolsShowsHonestCapabilitiesAndSaulCallout() {

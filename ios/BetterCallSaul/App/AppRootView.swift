@@ -15,7 +15,7 @@ struct AppRootView: View {
                         case .evidence:
                             EvidenceView(router: router, workflow: workflow)
                         case .document:
-                            DocumentView(legalCase: workflow.currentCase)
+                            DocumentView(workflow: workflow)
                         }
                     }
             }

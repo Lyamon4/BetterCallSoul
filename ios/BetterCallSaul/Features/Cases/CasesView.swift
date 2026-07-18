@@ -22,18 +22,26 @@ struct CasesView: View {
                                 .foregroundStyle(BCSColor.secondary)
                         }
                         Spacer()
-                        Text("24 900 ₸")
+                        Text(amountText)
                             .font(.bcsEditorial(24))
                     }
 
                     BCSDivider()
 
                     BCSStatusBadge(title: legalCase.status.rawValue, isActive: true)
-                    Text("Ответ до 28 июля")
+                    Text(deadlineText)
                         .font(.bcsBody(14, weight: .medium))
 
-                    timelineRow(title: "Документ подготовлен", detail: "18 июля, 09:41", active: false)
-                    timelineRow(title: "Ожидается отправка", detail: "Подтвердите действие", active: true)
+                    timelineRow(
+                        title: legalCase.status == .draft ? "Черновик создан" : "Документ подготовлен",
+                        detail: legalCase.number,
+                        active: legalCase.status == .draft
+                    )
+                    timelineRow(
+                        title: legalCase.status == .sent ? "Отправлено пользователем" : "Ожидается отправка",
+                        detail: legalCase.status == .sent ? "Следим за ответом" : "Подтвердите действие",
+                        active: legalCase.status != .sent
+                    )
                 }
                 .padding(.top, 30)
 
@@ -43,6 +51,23 @@ struct CasesView: View {
             .padding(.bottom, 80)
         }
         .background(BCSColor.canvas)
+    }
+
+    private var amountText: String {
+        guard let amount = legalCase.amount else { return "—" }
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "ru_RU")
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        formatter.groupingSeparator = " "
+        return "\(formatter.string(from: NSNumber(value: amount)) ?? String(amount)) ₸"
+    }
+
+    private var deadlineText: String {
+        guard let deadline = legalCase.responseDeadline else {
+            return "Срок появится после отправки"
+        }
+        return "Ответ до \(deadline.formatted(.dateTime.day().month(.wide).locale(Locale(identifier: "ru_RU"))))"
     }
 
     private func timelineRow(title: String, detail: String, active: Bool) -> some View {

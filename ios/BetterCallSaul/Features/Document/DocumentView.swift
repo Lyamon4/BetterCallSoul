@@ -1,9 +1,23 @@
 import SwiftUI
 
 struct DocumentView: View {
-    let legalCase: LegalCase
+    @Bindable var workflow: CaseWorkflowStore
     @Environment(\.dismiss) private var dismiss
-    @State private var showConfirmation = false
+    @State private var createdAt = Date()
+    @State private var shareURL: URL?
+    @State private var isShareSheetPresented = false
+    @State private var isExporting = false
+    @State private var notice: ExportNotice?
+
+    private var legalCase: LegalCase { workflow.currentCase }
+
+    private var draft: DocumentDraft {
+        DocumentDraftGenerator().makeDraft(
+            from: legalCase,
+            senderName: "Алим",
+            createdAt: createdAt
+        )
+    }
 
     var body: some View {
         ScrollView {
@@ -13,7 +27,7 @@ struct DocumentView: View {
                         Label("Обращение", systemImage: "chevron.left")
                     }
                     Spacer()
-                    BCSStatusBadge(title: "Готово", isActive: true)
+                    BCSStatusBadge(title: legalCase.status.rawValue, isActive: true)
                 }
                 .font(.bcsBody(15))
                 .foregroundStyle(BCSColor.ink)
@@ -29,28 +43,41 @@ struct DocumentView: View {
                 documentPaper
                     .padding(.top, 16)
 
-                reviewRow(icon: "checkmark", color: BCSColor.ink, title: "Данные подтверждены")
+                reviewRow(icon: "checkmark", color: BCSColor.ink, title: "Данные добавлены")
                     .padding(.top, 8)
-                reviewRow(
-                    icon: "exclamationmark",
-                    color: BCSColor.yellow,
-                    title: "2 места требуют внимания",
-                    isWarning: true
-                )
-                .padding(.top, 6)
 
-                BCSPrimaryButton("Подписать и отправить", systemImage: "signature") {
-                    showConfirmation = true
+                if draft.requiresReview {
+                    reviewRow(
+                        icon: "exclamationmark",
+                        color: BCSColor.yellow,
+                        title: "\(reviewIssueCount) места требуют внимания",
+                        isWarning: true
+                    )
+                    .padding(.top, 6)
+                } else {
+                    reviewRow(icon: "checkmark", color: BCSColor.ink, title: "Факты проверены")
+                        .padding(.top, 6)
                 }
+
+                BCSPrimaryButton(
+                    isExporting ? "Создаём PDF…" : "Создать и отправить PDF",
+                    systemImage: "square.and.arrow.up"
+                ) {
+                    exportPDF()
+                }
+                .disabled(isExporting)
                 .accessibilityIdentifier("sendDocumentButton")
                 .padding(.top, 8)
 
-                Button("Скачать PDF") {}
-                    .font(.bcsBody(16, weight: .medium))
-                    .foregroundStyle(BCSColor.ink)
-                    .underline()
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: 36)
+                Button("Скачать PDF") {
+                    exportPDF()
+                }
+                .disabled(isExporting)
+                .font(.bcsBody(16, weight: .medium))
+                .foregroundStyle(BCSColor.ink)
+                .underline()
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 36)
 
                 HStack {
                     Label("Всё по закону.", systemImage: "phone")
@@ -67,10 +94,22 @@ struct DocumentView: View {
         }
         .background(BCSColor.canvas.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
-        .alert("Документ подготовлен", isPresented: $showConfirmation) {
-            Button("Готово", role: .cancel) {}
-        } message: {
-            Text("На следующем этапе здесь появится системное меню отправки.")
+        .sheet(isPresented: $isShareSheetPresented, onDismiss: { shareURL = nil }) {
+            if let shareURL {
+                ShareSheet(items: [shareURL]) { completed in
+                    if completed {
+                        workflow.markSent()
+                    }
+                }
+                .presentationDetents([.medium, .large])
+            }
+        }
+        .alert(item: $notice) { notice in
+            Alert(
+                title: Text(notice.title),
+                message: Text(notice.message),
+                dismissButton: .default(Text("Готово"))
+            )
         }
     }
 
@@ -88,8 +127,8 @@ struct DocumentView: View {
                 }
                 Spacer()
                 VStack(alignment: .trailing, spacing: 4) {
-                    Text("Исх. № \(legalCase.number)")
-                    Text("18 июля 2026 г.")
+                    Text("Исх. № \(draft.caseNumber)")
+                    Text(createdAt.formatted(date: .long, time: .omitted))
                 }
                 .font(.bcsMeta(8))
             }
@@ -98,31 +137,31 @@ struct DocumentView: View {
                 .fill(BCSColor.yellow)
                 .frame(width: 34, height: 4)
 
-            Text("Требование о возврате 24 900 ₸")
+            Text(draft.title)
                 .font(.bcsEditorial(20))
 
-            Text("Кому: \(legalCase.counterparty)")
+            Text("Кому: \(draft.recipient)")
                 .font(.bcsBody(10))
 
             BCSDivider()
 
-            Text("Я подтверждаю, что с моего счёта была списана сумма 24 900 ₸ за продление подписки. Прошу рассмотреть требование о возврате после проверки обстоятельств и приложенных доказательств.")
+            Text(draft.body)
                 .font(.bcsBody(10))
                 .lineSpacing(2)
 
-            Text("Перед отправкой пользователь обязан проверить факты, получателя и применимые основания.")
+            Text(draft.reviewNotice)
                 .font(.bcsBody(10))
                 .lineSpacing(2)
                 .padding(10)
                 .background(BCSColor.paleYellow)
 
-            Text("Приложение: копия подтверждения списания на 1 странице.")
+            Text(attachmentText)
                 .font(.bcsBody(9))
 
             BCSDivider()
 
             HStack {
-                Text("С уважением,\nАлим")
+                Text("С уважением,\n\(draft.senderName)")
                     .font(.bcsBody(9))
                 Spacer()
                 Text("A. N.")
@@ -135,6 +174,42 @@ struct DocumentView: View {
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(BCSColor.divider))
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .accessibilityElement(children: .contain)
+    }
+
+    private var reviewIssueCount: Int {
+        max(2, legalCase.extractedFields.filter(\.requiresReview).count)
+    }
+
+    private var attachmentText: String {
+        if draft.attachmentCount == 0 {
+            return "Приложения: отсутствуют."
+        }
+        return "Приложение: подтверждающие материалы — \(draft.attachmentCount) файл(а)."
+    }
+
+    private func exportPDF() {
+        isExporting = true
+        defer { isExporting = false }
+
+        do {
+            let url = try PDFDocumentRenderer().write(draft)
+            workflow.prepareDocument()
+            shareURL = url
+
+            if ProcessInfo.processInfo.arguments.contains("-ui-testing") {
+                notice = ExportNotice(
+                    title: "PDF создан",
+                    message: "Документ готов к отправке."
+                )
+            } else {
+                isShareSheetPresented = true
+            }
+        } catch {
+            notice = ExportNotice(
+                title: "Не удалось создать PDF",
+                message: error.localizedDescription
+            )
+        }
     }
 
     private func reviewRow(
@@ -162,4 +237,10 @@ struct DocumentView: View {
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(BCSColor.divider))
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }
+}
+
+private struct ExportNotice: Identifiable {
+    let id = UUID()
+    let title: String
+    let message: String
 }
