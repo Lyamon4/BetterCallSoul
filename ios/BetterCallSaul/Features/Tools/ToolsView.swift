@@ -23,21 +23,22 @@ struct ToolsView: View {
                 }
 
                 BCSEditorialTitle(text: "Инструменты")
-                    .padding(.top, 44)
+                    .padding(.top, 30)
                 Text("Не советуем. Делаем.")
-                    .font(.bcsEditorial(25))
+                    .font(.bcsEditorial(23))
                     .foregroundStyle(BCSColor.secondary)
                     .padding(.top, 4)
 
-                BCSDivider().padding(.top, 34)
+                BCSDivider().padding(.top, 24)
 
                 ForEach(items) { item in
-                    HStack(spacing: 16) {
+                    HStack(spacing: 10) {
                         Text(String(format: "%02d", item.id))
-                            .font(.bcsEditorial(28))
-                            .frame(width: 42, alignment: .leading)
+                            .font(.bcsEditorial(24))
+                            .frame(width: 38, alignment: .leading)
                         Text(item.title)
-                            .font(.bcsEditorial(20))
+                            .font(.bcsEditorial(15.5))
+                            .lineLimit(1)
                             .minimumScaleFactor(0.75)
                         Spacer()
                         BCSStatusBadge(
@@ -48,25 +49,25 @@ struct ToolsView: View {
                             .font(.system(size: 13, weight: .medium))
                     }
                     .foregroundStyle(BCSColor.ink)
-                    .frame(minHeight: 68)
+                    .frame(minHeight: 49)
                     BCSDivider()
                 }
 
                 HStack(spacing: 20) {
                     PayphoneIllustration(lineColor: BCSColor.ink, lineWidth: 1.2)
-                        .frame(width: 72, height: 88)
+                        .frame(width: 62, height: 76)
                     Rectangle()
                         .fill(BCSColor.ink.opacity(0.25))
-                        .frame(width: 1, height: 76)
+                        .frame(width: 1, height: 68)
                     Text("Нужен план?\nПозвони Солу.")
-                        .font(.bcsEditorial(25))
+                        .font(.bcsEditorial(22))
                     Spacer()
                     Image(systemName: "chevron.right")
                 }
-                .padding(20)
+                .padding(14)
                 .background(BCSColor.yellow)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
-                .padding(.top, 24)
+                .padding(.top, 18)
             }
             .padding(.horizontal, 20)
             .padding(.top, 18)

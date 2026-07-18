@@ -9,7 +9,7 @@ struct HomeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 brandHeader
-                    .padding(.bottom, 30)
+                    .padding(.bottom, 16)
 
                 Text("Добрый вечер, Алим")
                     .font(.bcsBody(17))
@@ -27,17 +27,17 @@ struct HomeView: View {
                     router.open(.evidence)
                 }
                 .accessibilityIdentifier("createCaseButton")
-                .padding(.top, 24)
+                .padding(.top, 20)
 
                 caseTypes
-                    .padding(.top, 24)
+                    .padding(.top, 16)
 
                 activeCase
-                    .padding(.top, 28)
+                    .padding(.top, 12)
             }
             .padding(.horizontal, 20)
             .padding(.top, 18)
-            .padding(.bottom, 104)
+            .padding(.bottom, 96)
             .opacity(isVisible ? 1 : 0)
             .offset(y: isVisible ? 0 : BCSMotion.entryOffset(reduceMotion: reduceMotion))
         }
@@ -64,7 +64,7 @@ struct HomeView: View {
             }
             Spacer()
             PayphoneIllustration(lineColor: BCSColor.secondary.opacity(0.55), lineWidth: 1)
-                .frame(width: 82, height: 100)
+                .frame(width: 96, height: 112)
         }
     }
 
@@ -87,7 +87,7 @@ struct HomeView: View {
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(BCSColor.secondary)
                     }
-                    .frame(minHeight: 58)
+                    .frame(minHeight: 44)
                     .foregroundStyle(BCSColor.ink)
                 }
                 .accessibilityIdentifier("caseType.\(type == .subscription ? "subscription" : type.id)")
@@ -103,17 +103,20 @@ struct HomeView: View {
                 .tracking(1)
                 .foregroundStyle(BCSColor.secondary)
 
-            HStack(spacing: 14) {
+            HStack(spacing: 8) {
                 Rectangle()
                     .fill(BCSColor.yellow)
                     .frame(width: 3)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Возврат 24 900 ₸")
-                        .font(.bcsEditorial(24))
+                        .font(.bcsEditorial(20))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
                     Text(DemoFixtures.activeCase.number)
-                        .font(.bcsMeta())
+                        .font(.bcsMeta(10))
                         .foregroundStyle(BCSColor.secondary)
                 }
+                .layoutPriority(1)
                 Spacer()
                 VStack(alignment: .trailing, spacing: 8) {
                     BCSStatusBadge(title: "Ожидается ответ", isActive: true)
@@ -122,8 +125,10 @@ struct HomeView: View {
                         .foregroundStyle(BCSColor.secondary)
                 }
                 SaulPhoneTile()
+                    .scaleEffect(0.84)
+                    .frame(width: 44, height: 44)
             }
-            .frame(minHeight: 86)
+            .frame(minHeight: 62)
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("activeCaseCard")
 

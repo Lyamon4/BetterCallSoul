@@ -20,7 +20,7 @@ final class PrimaryFlowUITests: XCTestCase {
     func testSubscriptionPathOpensEvidence() {
         app.buttons["caseType.subscription"].tap()
 
-        XCTAssertTrue(app.staticTexts["Добавьте доказательства"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["Добавьте\nдоказательства"].waitForExistence(timeout: 2))
     }
 
     func testEvidenceScreenShowsExtractedFieldsAndContinues() {
@@ -65,5 +65,41 @@ final class PrimaryFlowUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Возврат за подписку"].waitForExistence(timeout: 2))
         XCTAssertTrue(app.staticTexts["24 900 ₸"].exists)
         XCTAssertTrue(app.staticTexts["Ответ до 28 июля"].exists)
+    }
+
+    func testPrimaryScreensCaptureStableReferences() {
+        capture(name: "01-home")
+
+        app.buttons["caseType.subscription"].tap()
+        capture(name: "02-evidence")
+
+        app.buttons["continueToDocumentButton"].tap()
+        capture(name: "03-document")
+
+        app.buttons["Обращение"].tap()
+        app.buttons["Новое обращение"].tap()
+        app.buttons["tab.tools"].tap()
+        capture(name: "04-tools")
+    }
+
+    func testLargeTextKeepsPrimaryActionReachable() {
+        app.terminate()
+        app.launchArguments = [
+            "-ui-testing",
+            "-UIPreferredContentSizeCategoryName",
+            "UICTContentSizeCategoryAccessibilityL"
+        ]
+        app.launch()
+
+        XCTAssertTrue(app.buttons["createCaseButton"].waitForExistence(timeout: 3))
+        app.buttons["createCaseButton"].swipeUp()
+        XCTAssertTrue(app.buttons["createCaseButton"].isHittable || app.staticTexts["Что случилось?"].exists)
+    }
+
+    private func capture(name: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 }

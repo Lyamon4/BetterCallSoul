@@ -4,23 +4,25 @@ struct AppRootView: View {
     @Bindable var router: AppRouter
 
     var body: some View {
-        NavigationStack(path: $router.path) {
-            ZStack(alignment: .bottom) {
+        ZStack(alignment: .bottom) {
+            NavigationStack(path: $router.path) {
                 currentTab
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(BCSColor.canvas.ignoresSafeArea())
+                    .navigationDestination(for: AppRoute.self) { route in
+                        switch route {
+                        case .evidence:
+                            EvidenceView(router: router, legalCase: DemoFixtures.activeCase)
+                        case .document:
+                            DocumentView(legalCase: DemoFixtures.activeCase)
+                        }
+                    }
+            }
 
-                BCSBottomBar(selectedTab: $router.selectedTab)
-            }
-            .background(BCSColor.canvas.ignoresSafeArea())
-            .navigationDestination(for: AppRoute.self) { route in
-                switch route {
-                case .evidence:
-                    EvidenceView(router: router, legalCase: DemoFixtures.activeCase)
-                case .document:
-                    DocumentView(legalCase: DemoFixtures.activeCase)
-                }
-            }
+            BCSBottomBar(router: router)
+                .zIndex(10)
         }
+        .background(BCSColor.canvas.ignoresSafeArea())
         .tint(BCSColor.ink)
     }
 
@@ -40,21 +42,22 @@ struct AppRootView: View {
 }
 
 private struct BCSBottomBar: View {
-    @Binding var selectedTab: AppTab
+    let router: AppRouter
 
     var body: some View {
         HStack {
             ForEach(AppTab.allCases, id: \.self) { tab in
                 Button {
-                    selectedTab = tab
+                    router.select(tab)
+                    router.reset()
                 } label: {
                     VStack(spacing: 5) {
                         Image(systemName: tab.symbol)
-                            .font(.system(size: 20, weight: selectedTab == tab ? .semibold : .regular))
+                            .font(.system(size: 20, weight: router.selectedTab == tab ? .semibold : .regular))
                         Text(tab.title)
-                            .font(.system(size: 11, weight: selectedTab == tab ? .semibold : .regular))
+                            .font(.system(size: 11, weight: router.selectedTab == tab ? .semibold : .regular))
                     }
-                    .foregroundStyle(selectedTab == tab ? BCSColor.ink : BCSColor.secondary)
+                    .foregroundStyle(router.selectedTab == tab ? BCSColor.ink : BCSColor.secondary)
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 58)
                 }

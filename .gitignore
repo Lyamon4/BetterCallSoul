@@ -13,3 +13,4 @@ xcuserdata/
 
 # Local feature worktrees
 .worktrees/
+artifacts/

@@ -18,15 +18,15 @@ struct EvidenceView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 topBar
-                BCSEditorialTitle(text: "Добавьте\nдоказательства")
-                    .padding(.top, 30)
+                BCSEditorialTitle(text: "Добавьте\nдоказательства", size: 42)
+                    .padding(.top, 14)
                 Text("Чек, списание или переписка помогут составить точное требование.")
-                    .font(.bcsBody())
+                    .font(.bcsBody(16))
                     .foregroundStyle(BCSColor.secondary)
                     .padding(.top, 12)
 
                 uploadArea
-                    .padding(.top, 26)
+                    .padding(.top, 16)
                 uploadedFile
                     .padding(.top, 12)
                 extractedData
@@ -35,18 +35,18 @@ struct EvidenceView: View {
                 HStack {
                     Spacer()
                     PayphoneIllustration(lineColor: BCSColor.secondary.opacity(0.18), lineWidth: 0.9)
-                        .frame(width: 94, height: 116)
+                        .frame(width: 48, height: 56)
                 }
-                .padding(.top, 14)
+                .padding(.top, 8)
 
                 BCSPrimaryButton("Продолжить") {
                     router.open(.document)
                 }
                 .accessibilityIdentifier("continueToDocumentButton")
-                .padding(.top, 10)
+                .padding(.top, 6)
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 30)
+            .padding(.bottom, 112)
             .opacity(isVisible ? 1 : 0)
             .offset(y: isVisible ? 0 : BCSMotion.entryOffset(reduceMotion: reduceMotion))
         }
@@ -89,8 +89,8 @@ struct EvidenceView: View {
                     .font(.bcsBody(17, weight: .medium))
                 Spacer()
             }
-            .padding(22)
-            .frame(minHeight: 100)
+            .padding(18)
+            .frame(minHeight: 76)
             .foregroundStyle(BCSColor.ink)
             .background(BCSColor.surface.opacity(0.55))
             .overlay(
@@ -121,7 +121,7 @@ struct EvidenceView: View {
             }
             .accessibilityLabel("Удалить документ")
         }
-        .padding(16)
+        .padding(12)
         .background(BCSColor.surface)
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(BCSColor.divider))
         .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -133,10 +133,10 @@ struct EvidenceView: View {
                 .font(.system(size: 10, weight: .medium))
                 .tracking(1)
                 .padding(.horizontal, 10)
-                .padding(.vertical, 7)
+                .padding(.vertical, 5)
                 .background(BCSColor.paleYellow)
                 .clipShape(RoundedRectangle(cornerRadius: 4))
-                .padding(16)
+                .padding(12)
 
             ForEach($fields) { $field in
                 HStack {
@@ -149,9 +149,9 @@ struct EvidenceView: View {
                         .accessibilityValue(field.value)
                 }
                 .font(.bcsBody(16))
-                .frame(minHeight: 54)
-                .padding(.horizontal, 16)
-                BCSDivider().padding(.horizontal, 16)
+                .frame(minHeight: 38)
+                .padding(.horizontal, 14)
+                BCSDivider().padding(.horizontal, 14)
             }
         }
         .background(BCSColor.surface)

@@ -22,7 +22,7 @@ struct BCSPrimaryButton: View {
                     .font(.bcsBody(17, weight: .semibold))
             }
             .frame(maxWidth: .infinity)
-            .frame(minHeight: 56)
+            .frame(minHeight: 48)
             .foregroundStyle(Color.white)
             .background(BCSColor.ink)
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
@@ -46,15 +46,15 @@ struct BCSStatusBadge: View {
     var body: some View {
         HStack(spacing: 6) {
             Text(title.uppercased())
-                .font(.system(size: 10, weight: .medium))
+                .font(.system(size: 9, weight: .medium))
                 .tracking(0.8)
             Circle()
                 .fill(isActive ? BCSColor.yellow : BCSColor.secondary.opacity(0.55))
                 .frame(width: 6, height: 6)
         }
         .foregroundStyle(BCSColor.secondary)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
         .background(BCSColor.surface.opacity(0.8))
         .clipShape(Capsule())
         .accessibilityElement(children: .combine)
@@ -71,10 +71,11 @@ struct BCSDivider: View {
 
 struct BCSEditorialTitle: View {
     let text: String
+    var size: CGFloat = 46
 
     var body: some View {
         Text(text)
-            .font(.bcsEditorial(50))
+            .font(.bcsEditorial(size))
             .tracking(-1.7)
             .foregroundStyle(BCSColor.ink)
             .minimumScaleFactor(0.72)
