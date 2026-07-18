@@ -36,4 +36,16 @@ final class PrimaryFlowUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts["Претензия готова"].waitForExistence(timeout: 2))
     }
+
+    func testDocumentConfirmationShowsSuccessState() {
+        app.buttons["caseType.subscription"].tap()
+        app.buttons["continueToDocumentButton"].tap()
+
+        XCTAssertTrue(app.staticTexts["Требование о возврате 24 900 ₸"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["2 места требуют внимания"].exists)
+
+        app.buttons["sendDocumentButton"].tap()
+
+        XCTAssertTrue(app.staticTexts["Документ подготовлен"].waitForExistence(timeout: 2))
+    }
 }

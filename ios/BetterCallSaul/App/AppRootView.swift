@@ -17,7 +17,7 @@ struct AppRootView: View {
                 case .evidence:
                     EvidenceView(router: router, legalCase: DemoFixtures.activeCase)
                 case .document:
-                    Text("Претензия готова")
+                    DocumentView(legalCase: DemoFixtures.activeCase)
                 }
             }
         }
