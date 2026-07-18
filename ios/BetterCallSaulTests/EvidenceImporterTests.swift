@@ -23,6 +23,8 @@ final class EvidenceImporterTests: XCTestCase {
         XCTAssertFalse(imported.item.fileSize.isEmpty)
         XCTAssertEqual(imported.image.width, 120)
         XCTAssertEqual(imported.image.height, 80)
+        XCTAssertEqual(imported.payload.mimeType, "image/jpeg")
+        XCTAssertFalse(imported.payload.data.isEmpty)
     }
 
     func testRejectsInvalidImageData() {

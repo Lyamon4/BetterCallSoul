@@ -5,6 +5,7 @@ import UIKit
 struct ImportedEvidence {
     let image: CGImage
     let item: EvidenceItem
+    let payload: EvidencePayload
 }
 
 enum EvidenceImportError: LocalizedError {
@@ -26,13 +27,29 @@ enum EvidenceImportError: LocalizedError {
 
 @MainActor
 struct EvidenceImporter {
+    private static let maximumPayloadBytes = 10 * 1_024 * 1_024
+
     func importImageData(_ data: Data, fileName: String) throws -> ImportedEvidence {
+        try validatePayloadSize(data)
         guard let image = UIImage(data: data)?.cgImage else {
             throw EvidenceImportError.unsupportedContent
         }
+        guard let normalizedData = UIImage(cgImage: image).jpegData(compressionQuality: 0.88) else {
+            throw EvidenceImportError.unreadableFile
+        }
+        try validatePayloadSize(normalizedData)
+        let normalizedFileName = (fileName as NSString)
+            .deletingPathExtension
+            .appending(".jpg")
         return ImportedEvidence(
             image: image,
-            item: EvidenceItem(fileName: fileName, fileSize: Self.fileSize(for: data.count))
+            item: EvidenceItem(fileName: fileName, fileSize: Self.fileSize(for: data.count)),
+            payload: EvidencePayload(
+                fileName: normalizedFileName,
+                mimeType: "image/jpeg",
+                data: normalizedData,
+                previewImage: image
+            )
         )
     }
 
@@ -55,6 +72,7 @@ struct EvidenceImporter {
     }
 
     private func importPDFData(_ data: Data, fileName: String) throws -> ImportedEvidence {
+        try validatePayloadSize(data)
         guard let document = PDFDocument(data: data), let page = document.page(at: 0) else {
             throw EvidenceImportError.emptyPDF
         }
@@ -70,8 +88,20 @@ struct EvidenceImporter {
         }
         return ImportedEvidence(
             image: image,
-            item: EvidenceItem(fileName: fileName, fileSize: Self.fileSize(for: data.count))
+            item: EvidenceItem(fileName: fileName, fileSize: Self.fileSize(for: data.count)),
+            payload: EvidencePayload(
+                fileName: fileName,
+                mimeType: "application/pdf",
+                data: data,
+                previewImage: image
+            )
         )
+    }
+
+    private func validatePayloadSize(_ data: Data) throws {
+        guard data.count <= Self.maximumPayloadBytes else {
+            throw AIProviderError.payloadTooLarge(maximumMB: 10)
+        }
     }
 
     private static func fileSize(for byteCount: Int) -> String {

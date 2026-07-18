@@ -1,6 +1,6 @@
 import Foundation
 
-enum CaseType: String, CaseIterable, Identifiable, Codable {
+enum CaseType: String, CaseIterable, Identifiable, Codable, Sendable {
     case charge = "Списали деньги"
     case fine = "Пришёл штраф"
     case subscription = "Отменить подписку"
