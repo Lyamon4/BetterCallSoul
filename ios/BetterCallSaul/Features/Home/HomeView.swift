@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HomeView: View {
     let router: AppRouter
+    @Bindable var workflow: CaseWorkflowStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isVisible = false
 
@@ -24,7 +25,7 @@ struct HomeView: View {
                     .padding(.top, 10)
 
                 BCSPrimaryButton("Создать обращение", systemImage: "square.and.pencil") {
-                    router.open(.evidence)
+                    beginCase(.subscription)
                 }
                 .accessibilityIdentifier("createCaseButton")
                 .padding(.top, 20)
@@ -73,7 +74,7 @@ struct HomeView: View {
             BCSDivider()
             ForEach(CaseType.allCases) { type in
                 Button {
-                    router.open(.evidence)
+                    beginCase(type)
                 } label: {
                     HStack(spacing: 15) {
                         Image(systemName: type.symbol)
@@ -108,18 +109,18 @@ struct HomeView: View {
                     .fill(BCSColor.yellow)
                     .frame(width: 3)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Возврат 24 900 ₸")
+                    Text(workflow.currentCase.title)
                         .font(.bcsEditorial(20))
                         .lineLimit(1)
                         .minimumScaleFactor(0.78)
-                    Text(DemoFixtures.activeCase.number)
+                    Text(workflow.currentCase.number)
                         .font(.bcsMeta(10))
                         .foregroundStyle(BCSColor.secondary)
                 }
                 .layoutPriority(1)
                 Spacer()
                 VStack(alignment: .trailing, spacing: 8) {
-                    BCSStatusBadge(title: "Ожидается ответ", isActive: true)
+                    BCSStatusBadge(title: workflow.currentCase.status.rawValue, isActive: true)
                     Text("до 28 июля")
                         .font(.bcsBody(13))
                         .foregroundStyle(BCSColor.secondary)
@@ -138,5 +139,12 @@ struct HomeView: View {
                 .foregroundStyle(BCSColor.secondary.opacity(0.6))
                 .frame(maxWidth: .infinity)
         }
+    }
+
+    private func beginCase(_ type: CaseType) {
+        if !ProcessInfo.processInfo.arguments.contains("-ui-testing") {
+            workflow.start(type: type)
+        }
+        router.open(.evidence)
     }
 }

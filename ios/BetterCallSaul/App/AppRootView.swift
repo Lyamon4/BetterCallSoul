@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AppRootView: View {
     @Bindable var router: AppRouter
+    @Bindable var workflow: CaseWorkflowStore
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -12,9 +13,9 @@ struct AppRootView: View {
                     .navigationDestination(for: AppRoute.self) { route in
                         switch route {
                         case .evidence:
-                            EvidenceView(router: router, legalCase: DemoFixtures.activeCase)
+                            EvidenceView(router: router, workflow: workflow)
                         case .document:
-                            DocumentView(legalCase: DemoFixtures.activeCase)
+                            DocumentView(legalCase: workflow.currentCase)
                         }
                     }
             }
@@ -30,9 +31,9 @@ struct AppRootView: View {
     private var currentTab: some View {
         switch router.selectedTab {
         case .home:
-            HomeView(router: router)
+            HomeView(router: router, workflow: workflow)
         case .cases:
-            CasesView(legalCase: DemoFixtures.activeCase)
+            CasesView(legalCase: workflow.currentCase)
         case .tools:
             ToolsView(items: DemoFixtures.tools)
         case .profile:

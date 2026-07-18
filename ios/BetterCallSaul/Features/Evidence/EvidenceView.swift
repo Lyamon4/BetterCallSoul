@@ -1,18 +1,17 @@
+import PhotosUI
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct EvidenceView: View {
     let router: AppRouter
-    let legalCase: LegalCase
+    @Bindable var workflow: CaseWorkflowStore
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var fields: [ExtractedField]
+    @State private var selectedPhoto: PhotosPickerItem?
+    @State private var isFileImporterPresented = false
+    @State private var isProcessing = false
+    @State private var errorMessage: String?
     @State private var isVisible = false
-
-    init(router: AppRouter, legalCase: LegalCase) {
-        self.router = router
-        self.legalCase = legalCase
-        _fields = State(initialValue: legalCase.extractedFields)
-    }
 
     var body: some View {
         ScrollView {
@@ -27,8 +26,20 @@ struct EvidenceView: View {
 
                 uploadArea
                     .padding(.top, 16)
-                uploadedFile
-                    .padding(.top, 12)
+
+                if isProcessing {
+                    processingState
+                        .padding(.top, 10)
+                }
+                if let errorMessage {
+                    errorState(errorMessage)
+                        .padding(.top, 10)
+                }
+                if let evidence = workflow.currentCase.evidence.first {
+                    uploadedFile(evidence)
+                        .padding(.top, 12)
+                }
+
                 extractedData
                     .padding(.top, 14)
 
@@ -40,6 +51,7 @@ struct EvidenceView: View {
                 .padding(.top, 8)
 
                 BCSPrimaryButton("Продолжить") {
+                    workflow.prepareDocument()
                     router.open(.document)
                 }
                 .accessibilityIdentifier("continueToDocumentButton")
@@ -52,6 +64,22 @@ struct EvidenceView: View {
         }
         .background(BCSColor.canvas.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
+        .fileImporter(
+            isPresented: $isFileImporterPresented,
+            allowedContentTypes: [.image, .pdf]
+        ) { result in
+            guard case let .success(url) = result else {
+                if case let .failure(error) = result {
+                    errorMessage = error.localizedDescription
+                }
+                return
+            }
+            Task { await processFile(at: url) }
+        }
+        .onChange(of: selectedPhoto) { _, photo in
+            guard let photo else { return }
+            Task { await processPhoto(photo) }
+        }
         .onAppear {
             withAnimation(BCSMotion.spring(reduceMotion: reduceMotion)) {
                 isVisible = true
@@ -81,12 +109,26 @@ struct EvidenceView: View {
     }
 
     private var uploadArea: some View {
-        Button {} label: {
+        Menu {
+            PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                Label("Выбрать фото", systemImage: "photo")
+            }
+            Button {
+                isFileImporterPresented = true
+            } label: {
+                Label("Выбрать файл или PDF", systemImage: "folder")
+            }
+        } label: {
             HStack(spacing: 16) {
                 Image(systemName: "doc.badge.arrow.up")
                     .font(.system(size: 28, weight: .regular))
-                Text("Добавить документ")
-                    .font(.bcsBody(17, weight: .medium))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(workflow.currentCase.evidence.isEmpty ? "Добавить документ" : "Заменить документ")
+                        .font(.bcsBody(17, weight: .medium))
+                    Text("Фото, PNG, JPG или PDF")
+                        .font(.bcsBody(12))
+                        .foregroundStyle(BCSColor.secondary)
+                }
                 Spacer()
             }
             .padding(18)
@@ -101,21 +143,52 @@ struct EvidenceView: View {
                     )
             )
         }
+        .accessibilityIdentifier("addEvidenceButton")
     }
 
-    private var uploadedFile: some View {
+    private var processingState: some View {
+        HStack(spacing: 12) {
+            ProgressView()
+                .tint(BCSColor.ink)
+            Text("Распознаём текст на устройстве…")
+                .font(.bcsBody(14, weight: .medium))
+            Spacer()
+        }
+        .padding(12)
+        .background(BCSColor.paleYellow)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .accessibilityIdentifier("evidenceProcessingState")
+    }
+
+    private func errorState(_ message: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "exclamationmark.triangle")
+            Text(message)
+                .font(.bcsBody(13))
+            Spacer()
+        }
+        .padding(12)
+        .background(BCSColor.paleYellow)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func uploadedFile(_ evidence: EvidenceItem) -> some View {
         HStack(spacing: 16) {
             Image(systemName: "doc")
                 .font(.system(size: 24))
             VStack(alignment: .leading, spacing: 3) {
-                Text(legalCase.evidence[0].fileName)
+                Text(evidence.fileName)
                     .font(.bcsBody(16, weight: .medium))
-                Text(legalCase.evidence[0].fileSize)
+                    .lineLimit(1)
+                Text(evidence.fileSize)
                     .font(.bcsBody(13))
                     .foregroundStyle(BCSColor.secondary)
             }
             Spacer()
-            Button {} label: {
+            Button {
+                workflow.removeEvidence()
+                errorMessage = nil
+            } label: {
                 Image(systemName: "xmark")
                     .frame(width: 44, height: 44)
             }
@@ -138,12 +211,12 @@ struct EvidenceView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 4))
                 .padding(12)
 
-            ForEach($fields) { $field in
+            ForEach(workflow.currentCase.extractedFields) { field in
                 HStack {
                     Text(field.label)
                         .foregroundStyle(BCSColor.secondary)
                     Spacer()
-                    TextField(field.label, text: $field.value)
+                    TextField(field.label, text: binding(for: field))
                         .multilineTextAlignment(.trailing)
                         .foregroundStyle(BCSColor.ink)
                         .accessibilityValue(field.value)
@@ -157,5 +230,64 @@ struct EvidenceView: View {
         .background(BCSColor.surface)
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(BCSColor.divider))
         .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func binding(for field: ExtractedField) -> Binding<String> {
+        Binding(
+            get: {
+                workflow.currentCase.extractedFields
+                    .first(where: { $0.id == field.id })?
+                    .value ?? ""
+            },
+            set: { workflow.updateField(label: field.label, value: $0) }
+        )
+    }
+
+    private func processPhoto(_ photo: PhotosPickerItem) async {
+        isProcessing = true
+        errorMessage = nil
+        defer { isProcessing = false }
+
+        do {
+            guard let data = try await photo.loadTransferable(type: Data.self) else {
+                throw EvidenceImportError.unreadableFile
+            }
+            let fileName = "Фото-\(Date.now.formatted(.iso8601.year().month().day())).png"
+            let imported = try EvidenceImporter().importImageData(data, fileName: fileName)
+            try await recognize(imported)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func processFile(at url: URL) async {
+        isProcessing = true
+        errorMessage = nil
+        defer { isProcessing = false }
+
+        do {
+            let imported = try EvidenceImporter().importFile(at: url)
+            try await recognize(imported)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func recognize(_ imported: ImportedEvidence) async throws {
+        let parser = ReceiptFieldParser()
+        workflow.applyExtraction(
+            evidence: imported.item,
+            fields: parser.parse("", caseType: workflow.currentCase.type)
+        )
+
+        do {
+            let text = try await VisionTextRecognizer().recognizeText(in: imported.image)
+            workflow.applyExtraction(
+                evidence: imported.item,
+                fields: parser.parse(text, caseType: workflow.currentCase.type)
+            )
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 }
