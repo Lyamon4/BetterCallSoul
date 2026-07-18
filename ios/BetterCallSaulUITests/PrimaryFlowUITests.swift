@@ -88,6 +88,15 @@ final class PrimaryFlowUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Ответ до 28 июля"].exists)
     }
 
+    func testProfileShowsConfiguredProviderStatusesWithoutSecrets() {
+        app.buttons["tab.profile"].tap()
+        app.buttons["AI-провайдеры"].tap()
+
+        XCTAssertTrue(app.staticTexts["geminiConfiguredStatus"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["deepSeekConfiguredStatus"].exists)
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'full-private'" )).firstMatch.exists)
+    }
+
     func testPrimaryScreensCaptureStableReferences() {
         capture(name: "01-home")
 
