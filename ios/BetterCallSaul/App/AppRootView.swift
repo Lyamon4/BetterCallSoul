@@ -14,6 +14,8 @@ struct AppRootView: View {
                         switch route {
                         case .evidence:
                             EvidenceView(router: router, workflow: workflow)
+                        case .aiAnalysis:
+                            AIAnalysisView(router: router, workflow: workflow)
                         case .document:
                             DocumentView(workflow: workflow)
                         }

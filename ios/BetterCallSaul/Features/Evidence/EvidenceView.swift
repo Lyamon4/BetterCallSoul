@@ -24,6 +24,9 @@ struct EvidenceView: View {
                     .foregroundStyle(BCSColor.secondary)
                     .padding(.top, 12)
 
+                narrativeField
+                    .padding(.top, 18)
+
                 uploadArea
                     .padding(.top, 16)
 
@@ -40,6 +43,11 @@ struct EvidenceView: View {
                         .padding(.top, 12)
                 }
 
+                if workflow.evidencePayload != nil {
+                    disclosure
+                        .padding(.top, 10)
+                }
+
                 extractedData
                     .padding(.top, 14)
 
@@ -50,11 +58,10 @@ struct EvidenceView: View {
                 }
                 .padding(.top, 8)
 
-                BCSPrimaryButton("Продолжить") {
-                    workflow.prepareDocument()
-                    router.open(.document)
+                BCSPrimaryButton("Проанализировать ситуацию", systemImage: "sparkles") {
+                    router.open(.aiAnalysis)
                 }
-                .accessibilityIdentifier("continueToDocumentButton")
+                .accessibilityIdentifier("continueToAIButton")
                 .padding(.top, 6)
             }
             .padding(.horizontal, 20)
@@ -85,6 +92,42 @@ struct EvidenceView: View {
                 isVisible = true
             }
         }
+    }
+
+    private var narrativeField: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Что произошло")
+                .font(.bcsBody(15, weight: .medium))
+            TextEditor(text: Binding(
+                get: { workflow.narrative },
+                set: { workflow.updateNarrative($0) }
+            ))
+            .font(.bcsBody(16))
+            .scrollContentBackground(.hidden)
+            .padding(10)
+            .frame(minHeight: 112)
+            .background(BCSColor.surface)
+            .overlay(RoundedRectangle(cornerRadius: 8).stroke(BCSColor.divider))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .accessibilityIdentifier("caseNarrativeField")
+        }
+    }
+
+    private var disclosure: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "eye")
+                .font(.system(size: 14, weight: .semibold))
+                .padding(.top, 2)
+            Text("Выбранный документ будет передан Gemini для визуального анализа. DeepSeek получит только распознанный и подтверждённый текст.")
+                .font(.bcsBody(12))
+                .foregroundStyle(BCSColor.secondary)
+                .lineSpacing(2)
+        }
+        .padding(12)
+        .background(BCSColor.paleYellow)
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(BCSColor.divider))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .accessibilityIdentifier("evidenceAITransferDisclosure")
     }
 
     private var topBar: some View {
@@ -275,6 +318,7 @@ struct EvidenceView: View {
 
     private func recognize(_ imported: ImportedEvidence) async throws {
         let parser = ReceiptFieldParser()
+        workflow.attachEvidence(imported)
         workflow.applyExtraction(
             evidence: imported.item,
             fields: parser.parse("", caseType: workflow.currentCase.type)

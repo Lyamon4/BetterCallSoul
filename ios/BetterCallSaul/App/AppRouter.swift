@@ -28,6 +28,7 @@ enum AppTab: String, CaseIterable, Hashable {
 
 enum AppRoute: Hashable {
     case evidence
+    case aiAnalysis
     case document
 }
 

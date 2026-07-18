@@ -12,11 +12,7 @@ struct DocumentView: View {
     private var legalCase: LegalCase { workflow.currentCase }
 
     private var draft: DocumentDraft {
-        DocumentDraftGenerator().makeDraft(
-            from: legalCase,
-            senderName: "Алим",
-            createdAt: createdAt
-        )
+        workflow.resolvedDocumentDraft(senderName: "Алим", createdAt: createdAt)
     }
 
     var body: some View {

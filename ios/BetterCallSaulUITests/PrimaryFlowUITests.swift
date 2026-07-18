@@ -1,5 +1,6 @@
 import XCTest
 
+@MainActor
 final class PrimaryFlowUITests: XCTestCase {
     private var app: XCUIApplication!
 
@@ -32,16 +33,35 @@ final class PrimaryFlowUITests: XCTestCase {
         XCTAssertEqual(app.textFields["Сумма"].value as? String, "24 900 ₸")
         XCTAssertTrue(app.staticTexts["ПРОВЕРЬТЕ ДАННЫЕ"].exists)
 
-        app.buttons["continueToDocumentButton"].tap()
+        continueFromEvidenceToDocument()
+    }
 
-        XCTAssertTrue(app.staticTexts["Претензия готова"].waitForExistence(timeout: 2))
+    func testEvidenceToAIAnalysisToDocumentFlow() {
+        app.buttons["caseType.subscription"].tap()
+        let narrative = app.textViews["caseNarrativeField"]
+        XCTAssertTrue(narrative.waitForExistence(timeout: 2))
+        narrative.tap()
+        narrative.typeText("Подписка продлилась без предупреждения")
+
+        app.buttons["continueToAIButton"].tap()
+
+        XCTAssertTrue(app.staticTexts["Разберём ситуацию"].waitForExistence(timeout: 3))
+        XCTAssertTrue(
+            app.staticTexts["DeepSeek"].exists || app.staticTexts["Локальный режим"].exists
+        )
+        app.buttons["prepareAIDocumentButton"].tap()
+
+        XCTAssertTrue(app.staticTexts["Претензия готова"].waitForExistence(timeout: 3))
     }
 
     func testDocumentExportCreatesRealPDFReadyState() {
         app.buttons["caseType.subscription"].tap()
-        app.buttons["continueToDocumentButton"].tap()
+        continueFromEvidenceToDocument()
 
-        XCTAssertTrue(app.staticTexts["Требование о возврате 24 900 ₸"].waitForExistence(timeout: 2))
+        XCTAssertTrue(
+            app.staticTexts["Требование об отмене подписки и возврате средств"]
+                .waitForExistence(timeout: 2)
+        )
         XCTAssertTrue(app.staticTexts["2 места требуют внимания"].exists)
 
         app.buttons["sendDocumentButton"].tap()
@@ -74,13 +94,15 @@ final class PrimaryFlowUITests: XCTestCase {
         app.buttons["caseType.subscription"].tap()
         capture(name: "02-evidence")
 
-        app.buttons["continueToDocumentButton"].tap()
-        capture(name: "03-document")
+        app.buttons["continueToAIButton"].tap()
+        XCTAssertTrue(app.staticTexts["Разберём ситуацию"].waitForExistence(timeout: 3))
+        capture(name: "03-ai-analysis")
+        app.buttons["prepareAIDocumentButton"].tap()
+        XCTAssertTrue(app.staticTexts["Претензия готова"].waitForExistence(timeout: 3))
+        capture(name: "04-document")
 
-        app.buttons["Обращение"].tap()
-        app.buttons["Новое обращение"].tap()
         app.buttons["tab.tools"].tap()
-        capture(name: "04-tools")
+        capture(name: "05-tools")
     }
 
     func testLargeTextKeepsPrimaryActionReachable() {
@@ -102,5 +124,12 @@ final class PrimaryFlowUITests: XCTestCase {
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+
+    private func continueFromEvidenceToDocument() {
+        app.buttons["continueToAIButton"].tap()
+        XCTAssertTrue(app.staticTexts["Разберём ситуацию"].waitForExistence(timeout: 3))
+        app.buttons["prepareAIDocumentButton"].tap()
+        XCTAssertTrue(app.staticTexts["Претензия готова"].waitForExistence(timeout: 3))
     }
 }
