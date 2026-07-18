@@ -29,7 +29,8 @@ final class ProductionSurfaceTests: XCTestCase {
             "AI-провайдеры",
             "DEMO",
             "КОНЦЕПТ",
-            "SaulPhoneTile"
+            "SaulPhoneTile",
+            "на устройстве"
         ]
         for label in forbiddenLabels {
             XCTAssertFalse(combined.contains(label), "Public surface contains \(label)")

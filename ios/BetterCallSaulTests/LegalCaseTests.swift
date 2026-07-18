@@ -11,10 +11,12 @@ final class LegalCaseTests: XCTestCase {
         XCTAssertEqual(legalCase.evidence.count, 1)
     }
 
-    func testWorkingToolsAreNotMarkedAsConcepts() {
-        let working = DemoFixtures.tools.filter { $0.capability == .working }
+    func testToolsContainOnlySupportedProductionActions() {
+        let tools = DemoFixtures.tools
 
-        XCTAssertEqual(working.count, 5)
-        XCTAssertTrue(working.allSatisfy { !$0.title.isEmpty })
+        XCTAssertEqual(tools.count, 5)
+        XCTAssertTrue(tools.allSatisfy { !$0.title.isEmpty })
+        XCTAssertFalse(tools.contains { $0.title == "Временный номер" })
+        XCTAssertFalse(tools.contains { $0.title == "Trial Card" })
     }
 }

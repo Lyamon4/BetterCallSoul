@@ -41,10 +41,6 @@ struct ToolsView: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.75)
                         Spacer()
-                        BCSStatusBadge(
-                            title: item.capability.rawValue,
-                            isActive: item.capability == .working
-                        )
                         Image(systemName: "chevron.right")
                             .font(.system(size: 13, weight: .medium))
                     }

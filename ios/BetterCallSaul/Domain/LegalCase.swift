@@ -92,14 +92,7 @@ struct LegalCase: Identifiable, Equatable, Codable {
     }
 }
 
-enum ToolCapability: String {
-    case working = "РАБОТАЕТ"
-    case demo = "DEMO"
-    case concept = "КОНЦЕПТ"
-}
-
 struct ToolItem: Identifiable, Equatable {
     let id: Int
     let title: String
-    let capability: ToolCapability
 }

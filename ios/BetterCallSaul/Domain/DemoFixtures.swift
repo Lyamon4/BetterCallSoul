@@ -24,12 +24,10 @@ enum DemoFixtures {
     )
 
     static let tools: [ToolItem] = [
-        ToolItem(id: 1, title: "Жалоба компании", capability: .working),
-        ToolItem(id: 2, title: "Обжалование штрафа", capability: .working),
-        ToolItem(id: 3, title: "Отмена подписки", capability: .working),
-        ToolItem(id: 4, title: "Возврат денег", capability: .working),
-        ToolItem(id: 5, title: "Переговоры по счёту", capability: .working),
-        ToolItem(id: 6, title: "Временный номер", capability: .demo),
-        ToolItem(id: 7, title: "Trial Card", capability: .concept)
+        ToolItem(id: 1, title: "Жалоба компании"),
+        ToolItem(id: 2, title: "Обжалование штрафа"),
+        ToolItem(id: 3, title: "Отмена подписки"),
+        ToolItem(id: 4, title: "Возврат денег"),
+        ToolItem(id: 5, title: "Переговоры по счёту")
     ]
 }

@@ -193,7 +193,7 @@ struct EvidenceView: View {
         HStack(spacing: 12) {
             ProgressView()
                 .tint(BCSColor.ink)
-            Text("Распознаём текст на устройстве…")
+            Text("Проверяем документ…")
                 .font(.bcsBody(14, weight: .medium))
             Spacer()
         }

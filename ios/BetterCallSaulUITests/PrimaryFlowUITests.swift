@@ -36,7 +36,7 @@ final class PrimaryFlowUITests: XCTestCase {
         continueFromEvidenceToDocument()
     }
 
-    func testEvidenceToAIAnalysisToDocumentFlow() {
+    func testEvidenceToAnalysisToDocumentFlow() {
         app.buttons["caseType.subscription"].tap()
         let narrative = app.textViews["caseNarrativeField"]
         XCTAssertTrue(narrative.waitForExistence(timeout: 2))
@@ -46,9 +46,9 @@ final class PrimaryFlowUITests: XCTestCase {
         app.buttons["continueToAIButton"].tap()
 
         XCTAssertTrue(app.staticTexts["Разберём ситуацию"].waitForExistence(timeout: 3))
-        XCTAssertTrue(
-            app.staticTexts["DeepSeek"].exists || app.staticTexts["Локальный режим"].exists
-        )
+        XCTAssertTrue(app.staticTexts["ПРОВЕРЕННЫЕ ФАКТЫ"].exists)
+        XCTAssertFalse(app.staticTexts["DeepSeek"].exists)
+        XCTAssertFalse(app.staticTexts["Локальный режим"].exists)
         app.buttons["prepareAIDocumentButton"].tap()
 
         XCTAssertTrue(app.staticTexts["Претензия готова"].waitForExistence(timeout: 3))
@@ -70,13 +70,15 @@ final class PrimaryFlowUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Документ готов к отправке."].exists)
     }
 
-    func testToolsShowsHonestCapabilitiesAndSaulCallout() {
+    func testToolsShowsSupportedCapabilitiesAndSaulCallout() {
         app.buttons["tab.tools"].tap()
 
         XCTAssertTrue(app.staticTexts["Инструменты"].waitForExistence(timeout: 2))
-        XCTAssertTrue(app.staticTexts["Временный номер"].exists)
-        XCTAssertTrue(app.staticTexts["DEMO"].exists)
-        XCTAssertTrue(app.staticTexts["КОНЦЕПТ"].exists)
+        XCTAssertTrue(app.staticTexts["Отмена подписки"].exists)
+        XCTAssertFalse(app.staticTexts["Временный номер"].exists)
+        XCTAssertFalse(app.staticTexts["Trial Card"].exists)
+        XCTAssertFalse(app.staticTexts["DEMO"].exists)
+        XCTAssertFalse(app.staticTexts["КОНЦЕПТ"].exists)
         XCTAssertTrue(app.staticTexts["Нужен план?\nПозвони Солу."].exists)
     }
 
@@ -88,13 +90,17 @@ final class PrimaryFlowUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Ответ до 28 июля"].exists)
     }
 
-    func testProfileShowsConfiguredProviderStatusesWithoutSecrets() {
+    func testProductionSurfaceHidesImplementationAndPrototypeControls() {
         app.buttons["tab.profile"].tap()
-        app.buttons["AI-провайдеры"].tap()
+        XCTAssertTrue(app.staticTexts["Профиль"].waitForExistence(timeout: 2))
+        XCTAssertFalse(app.buttons["AI-провайдеры"].exists)
 
-        XCTAssertTrue(app.staticTexts["geminiConfiguredStatus"].waitForExistence(timeout: 2))
-        XCTAssertTrue(app.staticTexts["deepSeekConfiguredStatus"].exists)
-        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'full-private'" )).firstMatch.exists)
+        app.buttons["tab.tools"].tap()
+        XCTAssertTrue(app.staticTexts["Инструменты"].waitForExistence(timeout: 2))
+        XCTAssertFalse(app.staticTexts["Временный номер"].exists)
+        XCTAssertFalse(app.staticTexts["Trial Card"].exists)
+        XCTAssertFalse(app.staticTexts["DEMO"].exists)
+        XCTAssertFalse(app.staticTexts["КОНЦЕПТ"].exists)
     }
 
     func testPrimaryScreensCaptureStableReferences() {
