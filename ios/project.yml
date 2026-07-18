@@ -11,6 +11,9 @@ targets:
   BetterCallSaul:
     type: application
     platform: iOS
+    configFiles:
+      Debug: Config/Secrets.xcconfig
+      Release: Config/Secrets.xcconfig
     sources:
       - path: BetterCallSaul
     settings:
@@ -21,6 +24,10 @@ targets:
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: true
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: true
         INFOPLIST_KEY_UILaunchScreen_Generation: true
+        INFOPLIST_KEY_GeminiAPIKey: $(GEMINI_API_KEY)
+        INFOPLIST_KEY_GeminiModel: $(GEMINI_MODEL)
+        INFOPLIST_KEY_DeepSeekAPIKey: $(DEEPSEEK_API_KEY)
+        INFOPLIST_KEY_DeepSeekModel: $(DEEPSEEK_MODEL)
         TARGETED_DEVICE_FAMILY: "1"
     scheme:
       testTargets:
