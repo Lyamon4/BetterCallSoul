@@ -121,7 +121,7 @@ struct HomeView: View {
                 Spacer()
                 VStack(alignment: .trailing, spacing: 8) {
                     BCSStatusBadge(title: workflow.currentCase.status.rawValue, isActive: true)
-                    Text("до 28 июля")
+                    Text(activeCaseDeadline)
                         .font(.bcsBody(13))
                         .foregroundStyle(BCSColor.secondary)
                 }
@@ -146,5 +146,12 @@ struct HomeView: View {
             workflow.start(type: type)
         }
         router.open(.evidence)
+    }
+
+    private var activeCaseDeadline: String {
+        guard let deadline = workflow.currentCase.responseDeadline else {
+            return "Черновик"
+        }
+        return "до \(deadline.formatted(.dateTime.day().month(.wide).locale(Locale(identifier: "ru_RU"))))"
     }
 }
