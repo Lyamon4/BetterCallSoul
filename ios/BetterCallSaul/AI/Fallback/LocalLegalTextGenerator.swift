@@ -2,14 +2,16 @@ import Foundation
 
 struct LocalLegalTextGenerator: LegalTextGenerating {
     func analyzeCase(_ request: CaseAIRequest) async throws -> CaseAIAnalysis {
-        let missingFields = ["Компания", "Сумма", "Дата"].filter {
-            request.reviewedFields[$0]?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true
+        let missingFields = request.caseType.presentation.fields.filter { descriptor in
+            request.reviewedFields[descriptor.label]?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .isEmpty ?? true
         }
-        let questions = Array(missingFields.prefix(5)).map { field in
+        let questions = Array(missingFields.prefix(5)).map { descriptor in
             AIQuestion(
-                id: "local.\(field)",
-                kind: field == "Сумма" ? .amount : field == "Дата" ? .date : .text,
-                prompt: "Укажите: \(field.lowercased())",
+                id: "local.\(descriptor.kind.rawValue).\(descriptor.label)",
+                kind: questionKind(for: descriptor.kind),
+                prompt: "Укажите: \(descriptor.label.lowercased())",
                 whyNeeded: "Поле нужно для точного обращения",
                 options: [],
                 required: true
@@ -30,11 +32,16 @@ struct LocalLegalTextGenerator: LegalTextGenerating {
         let facts = [context.narrative, context.evidenceSummary]
             .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
-        let missing = ["Компания", "Сумма", "Дата"].filter {
-            context.reviewedFields[$0]?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true
+        let descriptors = context.caseType.presentation.fields
+        let missing = descriptors.filter { descriptor in
+            context.reviewedFields[descriptor.label]?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .isEmpty ?? true
         }
+        let recipientLabel = descriptors.first(where: { $0.kind == .counterparty })?.label
+        let recipient = recipientLabel.flatMap { nonEmpty(context.reviewedFields[$0]) }
         return AIDocumentSections(
-            recipient: nonEmpty(context.reviewedFields["Компания"]),
+            recipient: recipient,
             subject: subject(for: context.caseType),
             facts: facts.isEmpty ? ["Обстоятельства указаны пользователем в обращении."] : facts,
             demands: demands(for: context.caseType),
@@ -42,8 +49,16 @@ struct LocalLegalTextGenerator: LegalTextGenerating {
             attachmentDescription: context.evidenceSummary == nil
                 ? "Подтверждающие материалы не приложены"
                 : "Приложенные подтверждающие материалы",
-            unresolvedIssues: missing.map { "Уточнить поле «\($0)»" }
+            unresolvedIssues: missing.map { "Уточнить поле «\($0.label)»" }
         )
+    }
+
+    private func questionKind(for fieldKind: CaseFieldKind) -> AIQuestionKind {
+        switch fieldKind {
+        case .amount: .amount
+        case .date: .date
+        case .counterparty, .reference, .detail: .text
+        }
     }
 
     private func recommendation(for type: CaseType) -> String {
