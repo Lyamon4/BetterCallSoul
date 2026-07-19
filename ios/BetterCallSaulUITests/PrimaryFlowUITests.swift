@@ -18,6 +18,21 @@ final class PrimaryFlowUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["activeCaseCard"].exists)
     }
 
+    func testHomeSaulRevealsAndDismissesHelpfulCopy() {
+        let saul = app.buttons["saulMascotButton"]
+        XCTAssertTrue(saul.waitForExistence(timeout: 3))
+
+        saul.tap()
+        XCTAssertTrue(
+            app.staticTexts["Расскажите как было — я помогу собрать главное."]
+                .waitForExistence(timeout: 2)
+        )
+        XCTAssertTrue(app.descendants(matching: .any)["saulTipBubble"].exists)
+
+        saul.tap()
+        XCTAssertFalse(app.staticTexts["Расскажите как было — я помогу собрать главное."].exists)
+    }
+
     func testSubscriptionPathOpensEvidence() {
         app.buttons["caseType.subscription"].tap()
 

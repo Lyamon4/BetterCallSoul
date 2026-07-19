@@ -5,12 +5,20 @@ struct HomeView: View {
     @Bindable var workflow: CaseWorkflowStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isVisible = false
+    @State private var isSaulTipVisible = false
+    @State private var saulTipIndex = 0
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 brandHeader
                     .padding(.bottom, 16)
+
+                if isSaulTipVisible {
+                    SaulTipBubble(text: SaulHelpCopy.line(at: saulTipIndex))
+                        .padding(.bottom, 14)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
 
                 Text("Добрый вечер, Алим")
                     .font(.bcsBody(17))
@@ -48,6 +56,9 @@ struct HomeView: View {
                 isVisible = true
             }
         }
+        .onDisappear {
+            isSaulTipVisible = false
+        }
     }
 
     private var brandHeader: some View {
@@ -64,8 +75,27 @@ struct HomeView: View {
                     .foregroundStyle(BCSColor.secondary)
             }
             Spacer()
-            PayphoneIllustration(lineColor: BCSColor.secondary.opacity(0.55), lineWidth: 1)
-                .frame(width: 96, height: 112)
+            Button {
+                withAnimation(BCSMotion.spring(reduceMotion: reduceMotion)) {
+                    if isSaulTipVisible {
+                        isSaulTipVisible = false
+                        saulTipIndex = (saulTipIndex + 1) % SaulHelpCopy.lines.count
+                    } else {
+                        isSaulTipVisible = true
+                    }
+                }
+            } label: {
+                SaulMascotView(
+                    state: isSaulTipVisible ? .talking : .idle,
+                    size: 96,
+                    isDecorative: false
+                )
+            }
+            .buttonStyle(.plain)
+            .frame(minWidth: 44, minHeight: 44)
+            .accessibilityLabel("Сол, помощник")
+            .accessibilityHint("Показывает короткую подсказку")
+            .accessibilityIdentifier("saulMascotButton")
         }
     }
 
@@ -139,6 +169,7 @@ struct HomeView: View {
     }
 
     private func beginCase(_ type: CaseType) {
+        isSaulTipVisible = false
         if !ProcessInfo.processInfo.arguments.contains("-ui-testing") {
             workflow.start(type: type)
         }
