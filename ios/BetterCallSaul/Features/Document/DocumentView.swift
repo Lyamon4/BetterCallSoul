@@ -23,6 +23,10 @@ struct DocumentView: View {
                         Label("Обращение", systemImage: "chevron.left")
                     }
                     Spacer()
+                    SaulMascotView(state: .celebrating, size: 48)
+                        .accessibilityHidden(false)
+                        .accessibilityLabel("Сол радуется готовому документу")
+                        .accessibilityIdentifier("documentCelebratingSaul")
                     BCSStatusBadge(title: legalCase.status.rawValue, isActive: true)
                 }
                 .font(.bcsBody(15))
@@ -35,18 +39,6 @@ struct DocumentView: View {
                     .font(.bcsBody())
                     .foregroundStyle(BCSColor.secondary)
                     .padding(.top, 8)
-
-                HStack(spacing: 12) {
-                    SaulMascotView(state: .celebrating, size: 72)
-                    Text("Готово. Осталось проверить данные и отправить документ.")
-                        .font(.bcsBody(14, weight: .medium))
-                        .foregroundStyle(BCSColor.ink)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Spacer(minLength: 0)
-                }
-                .padding(.top, 10)
-                .accessibilityElement(children: .combine)
-                .accessibilityIdentifier("documentCelebratingSaul")
 
                 documentPaper
                     .padding(.top, 16)
