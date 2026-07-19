@@ -36,6 +36,18 @@ struct DocumentView: View {
                     .foregroundStyle(BCSColor.secondary)
                     .padding(.top, 8)
 
+                HStack(spacing: 12) {
+                    SaulMascotView(state: .celebrating, size: 72)
+                    Text("Готово. Осталось проверить данные и отправить документ.")
+                        .font(.bcsBody(14, weight: .medium))
+                        .foregroundStyle(BCSColor.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
+                .padding(.top, 10)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("documentCelebratingSaul")
+
                 documentPaper
                     .padding(.top, 16)
 

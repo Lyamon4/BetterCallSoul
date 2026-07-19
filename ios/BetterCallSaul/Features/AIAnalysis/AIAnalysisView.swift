@@ -82,8 +82,7 @@ struct AIAnalysisView: View {
 
     private var progressPanel: some View {
         HStack(spacing: 14) {
-            ProgressView()
-                .tint(BCSColor.ink)
+            SaulMascotView(state: .thinking, size: 58)
             VStack(alignment: .leading, spacing: 3) {
                 Text(progressTitle)
                     .font(.bcsBody(16, weight: .medium))

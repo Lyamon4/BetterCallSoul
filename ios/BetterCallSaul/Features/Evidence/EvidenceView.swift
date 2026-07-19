@@ -191,8 +191,7 @@ struct EvidenceView: View {
 
     private var processingState: some View {
         HStack(spacing: 12) {
-            ProgressView()
-                .tint(BCSColor.ink)
+            SaulMascotView(state: .thinking, size: 52)
             Text("Проверяем документ…")
                 .font(.bcsBody(14, weight: .medium))
             Spacer()

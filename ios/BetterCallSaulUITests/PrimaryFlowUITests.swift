@@ -67,6 +67,10 @@ final class PrimaryFlowUITests: XCTestCase {
         app.buttons["prepareAIDocumentButton"].tap()
 
         XCTAssertTrue(app.staticTexts["Претензия готова"].waitForExistence(timeout: 3))
+        XCTAssertTrue(
+            app.descendants(matching: .any)["documentCelebratingSaul"]
+                .waitForExistence(timeout: 2)
+        )
     }
 
     func testDocumentExportCreatesRealPDFReadyState() {
