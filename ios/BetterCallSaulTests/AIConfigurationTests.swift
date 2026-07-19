@@ -30,4 +30,56 @@ final class AIConfigurationTests: XCTestCase {
             XCTAssertEqual(error as? AIProviderError, .missingKey(.deepSeek))
         }
     }
+
+    func testUITestingClassifierRoutesWithoutNetwork() async throws {
+        let result = try await AIServiceContainer.uiTesting.problemClassifier.classify(
+            ProblemRoutingRequest(
+                problem: "Любое тестовое описание",
+                clarificationQuestion: nil,
+                clarificationAnswer: nil,
+                clarificationAllowed: true
+            )
+        )
+
+        XCTAssertEqual(result, .route(caseType: .fine))
+    }
+
+    func testUITestingClarificationClassifierAsksOnceThenRoutes() async throws {
+        let classifier = AIServiceContainer.uiTestingWithClarification.problemClassifier
+        let first = try await classifier.classify(
+            ProblemRoutingRequest(
+                problem: "Неясная ситуация",
+                clarificationQuestion: nil,
+                clarificationAnswer: nil,
+                clarificationAllowed: true
+            )
+        )
+        let second = try await classifier.classify(
+            ProblemRoutingRequest(
+                problem: "Неясная ситуация",
+                clarificationQuestion: "Это штраф от госоргана?",
+                clarificationAnswer: "Да",
+                clarificationAllowed: false
+            )
+        )
+
+        XCTAssertEqual(first, .clarify(question: "Это штраф от госоргана?"))
+        XCTAssertEqual(second, .route(caseType: .fine))
+    }
+
+    func testLocalOnlyClassifierDoesNotGuessCategory() async {
+        do {
+            _ = try await AIServiceContainer.localOnly.problemClassifier.classify(
+                ProblemRoutingRequest(
+                    problem: "Пришёл штраф",
+                    clarificationQuestion: nil,
+                    clarificationAnswer: nil,
+                    clarificationAllowed: true
+                )
+            )
+            XCTFail("Expected unavailable classifier")
+        } catch {
+            XCTAssertEqual(error as? ProblemRoutingError, .unavailable)
+        }
+    }
 }

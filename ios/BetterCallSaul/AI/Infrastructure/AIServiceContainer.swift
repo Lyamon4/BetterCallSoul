@@ -4,6 +4,19 @@ struct AIServiceContainer: Sendable {
     let evidenceAnalyzer: any EvidenceAnalyzing
     let legalTextGenerator: any LegalTextGenerating
     let localTextGenerator: any LegalTextGenerating
+    let problemClassifier: any ProblemClassifying
+
+    init(
+        evidenceAnalyzer: any EvidenceAnalyzing,
+        legalTextGenerator: any LegalTextGenerating,
+        localTextGenerator: any LegalTextGenerating,
+        problemClassifier: any ProblemClassifying = UnavailableProblemClassifier()
+    ) {
+        self.evidenceAnalyzer = evidenceAnalyzer
+        self.legalTextGenerator = legalTextGenerator
+        self.localTextGenerator = localTextGenerator
+        self.problemClassifier = problemClassifier
+    }
 
     static func live(
         configuration: AIConfiguration,
@@ -20,7 +33,19 @@ struct AIServiceContainer: Sendable {
                 model: configuration.deepSeekModel,
                 transport: transport
             ),
-            localTextGenerator: LocalLegalTextGenerator()
+            localTextGenerator: LocalLegalTextGenerator(),
+            problemClassifier: FallbackProblemClassifier(
+                primary: DeepSeekProblemClassifier(
+                    apiKey: configuration.deepSeekAPIKey,
+                    model: configuration.deepSeekModel,
+                    transport: transport
+                ),
+                fallback: GeminiProblemClassifier(
+                    apiKey: configuration.geminiAPIKey,
+                    model: configuration.geminiModel,
+                    transport: transport
+                )
+            )
         )
     }
 
@@ -28,7 +53,8 @@ struct AIServiceContainer: Sendable {
         Self(
             evidenceAnalyzer: UnavailableEvidenceAnalyzer(),
             legalTextGenerator: LocalLegalTextGenerator(),
-            localTextGenerator: LocalLegalTextGenerator()
+            localTextGenerator: LocalLegalTextGenerator(),
+            problemClassifier: UnavailableProblemClassifier()
         )
     }
 
@@ -36,7 +62,17 @@ struct AIServiceContainer: Sendable {
         Self(
             evidenceAnalyzer: UITestingEvidenceAnalyzer(),
             legalTextGenerator: UITestingLegalTextGenerator(),
-            localTextGenerator: LocalLegalTextGenerator()
+            localTextGenerator: LocalLegalTextGenerator(),
+            problemClassifier: UITestingProblemClassifier(asksForClarification: false)
+        )
+    }
+
+    static var uiTestingWithClarification: Self {
+        Self(
+            evidenceAnalyzer: UITestingEvidenceAnalyzer(),
+            legalTextGenerator: UITestingLegalTextGenerator(),
+            localTextGenerator: LocalLegalTextGenerator(),
+            problemClassifier: UITestingProblemClassifier(asksForClarification: true)
         )
     }
 }
