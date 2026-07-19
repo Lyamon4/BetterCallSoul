@@ -4,6 +4,7 @@
 # Xcode and Swift build output
 ios/BetterCallSaul.xcodeproj/
 ios/.build/
+ios/.derivedData/
 DerivedData/
 *.xcuserstate
 xcuserdata/
