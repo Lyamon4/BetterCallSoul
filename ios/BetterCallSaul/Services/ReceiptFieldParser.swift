@@ -2,25 +2,20 @@ import Foundation
 
 struct ReceiptFieldParser {
     func parse(_ text: String, caseType: CaseType) -> [ExtractedField] {
-        let company = company(in: text)
-        let amount = amount(in: text)
-        let date = date(in: text)
-
-        return [
-            ExtractedField(label: "Компания", value: company, requiresReview: company.isEmpty),
-            ExtractedField(label: "Сумма", value: amount, requiresReview: amount.isEmpty),
-            ExtractedField(label: "Дата", value: date, requiresReview: date.isEmpty),
-            ExtractedField(label: "Тип", value: Self.displayName(for: caseType))
+        let values: [CaseFieldKind: String] = [
+            .counterparty: company(in: text),
+            .amount: amount(in: text),
+            .date: date(in: text)
         ]
-    }
 
-    static func displayName(for type: CaseType) -> String {
-        switch type {
-        case .charge: "Списание"
-        case .fine: "Штраф"
-        case .subscription: "Подписка"
-        case .product: "Товар"
-        case .bill: "Счёт"
+        return caseType.presentation.fields.map { descriptor in
+            let value = values[descriptor.kind] ?? ""
+            return ExtractedField(
+                kind: descriptor.kind,
+                label: descriptor.label,
+                value: value,
+                requiresReview: value.isEmpty
+            )
         }
     }
 

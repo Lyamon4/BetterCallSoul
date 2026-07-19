@@ -43,12 +43,20 @@ struct EvidenceItem: Identifiable, Equatable, Codable {
 
 struct ExtractedField: Identifiable, Equatable, Codable {
     let id: UUID
+    let kind: CaseFieldKind
     let label: String
     var value: String
     var requiresReview: Bool
 
-    init(id: UUID = UUID(), label: String, value: String, requiresReview: Bool = false) {
+    init(
+        id: UUID = UUID(),
+        kind: CaseFieldKind,
+        label: String,
+        value: String,
+        requiresReview: Bool = false
+    ) {
         self.id = id
+        self.kind = kind
         self.label = label
         self.value = value
         self.requiresReview = requiresReview

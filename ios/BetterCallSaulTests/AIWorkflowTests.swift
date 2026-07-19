@@ -78,6 +78,14 @@ final class AIWorkflowTests: XCTestCase {
         XCTAssertEqual(store.aiState, .questions)
         XCTAssertEqual(store.currentCase.counterparty, "MegaPlus")
         XCTAssertEqual(store.currentCase.amount, 24_900)
+        XCTAssertEqual(
+            store.currentCase.extractedFields.map(\.label),
+            ["Сервис", "Сумма", "Дата списания", "Дата отмены"]
+        )
+        XCTAssertEqual(
+            store.currentCase.extractedFields.first(where: { $0.kind == .detail })?.value,
+            ""
+        )
         XCTAssertEqual(store.caseAnalysis?.questions.count, 1)
         XCTAssertEqual(store.activeProvider, .deepSeek)
         let evidenceAttempts = await evidence.attemptCount()

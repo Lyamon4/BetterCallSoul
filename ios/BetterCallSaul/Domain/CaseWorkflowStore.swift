@@ -174,25 +174,26 @@ final class CaseWorkflowStore {
     }
 
     private func synchronizeCaseFacts() {
-        currentCase.counterparty = value(for: "Компания")
-        currentCase.amount = Self.integerAmount(from: value(for: "Сумма"))
+        currentCase.counterparty = value(for: .counterparty)
+        currentCase.amount = Self.integerAmount(from: value(for: .amount))
         currentCase.title = Self.title(for: currentCase.type, amount: currentCase.amount)
     }
 
     private func applyEvidenceAnalysis(_ analysis: EvidenceAnalysis) {
-        let existingCompany = value(for: "Компания")
-        let existingAmount = value(for: "Сумма")
-        let existingDate = value(for: "Дата")
-        let company = analysis.counterparty ?? existingCompany
-        let amount = analysis.amount.map(Self.formatDecimalAmount) ?? existingAmount
-        let date = analysis.transactionDate ?? existingDate
-        currentCase.extractedFields = [
-            ExtractedField(label: "Компания", value: company, requiresReview: company.isEmpty),
-            ExtractedField(label: "Сумма", value: amount, requiresReview: amount.isEmpty),
-            ExtractedField(label: "Дата", value: date, requiresReview: date.isEmpty),
-            ExtractedField(label: "Тип", value: ReceiptFieldParser.displayName(for: currentCase.type))
-        ]
+        updateRecognizedValue(analysis.counterparty, for: .counterparty)
+        updateRecognizedValue(analysis.amount.map(Self.formatDecimalAmount), for: .amount)
+        updateRecognizedValue(analysis.transactionDate, for: .date)
         synchronizeCaseFacts()
+    }
+
+    private func updateRecognizedValue(_ value: String?, for kind: CaseFieldKind) {
+        guard let value = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !value.isEmpty,
+              let index = currentCase.extractedFields.firstIndex(where: { $0.kind == kind }) else {
+            return
+        }
+        currentCase.extractedFields[index].value = value
+        currentCase.extractedFields[index].requiresReview = false
     }
 
     private func makeCaseRequest() -> CaseAIRequest {
@@ -217,9 +218,9 @@ final class CaseWorkflowStore {
         }
     }
 
-    private func value(for label: String) -> String {
+    private func value(for kind: CaseFieldKind) -> String {
         currentCase.extractedFields
-            .first(where: { $0.label == label })?
+            .first(where: { $0.kind == kind })?
             .value
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
@@ -239,12 +240,14 @@ final class CaseWorkflowStore {
     }
 
     private static func emptyFields(for type: CaseType) -> [ExtractedField] {
-        [
-            ExtractedField(label: "Компания", value: "", requiresReview: true),
-            ExtractedField(label: "Сумма", value: "", requiresReview: true),
-            ExtractedField(label: "Дата", value: "", requiresReview: true),
-            ExtractedField(label: "Тип", value: ReceiptFieldParser.displayName(for: type))
-        ]
+        type.presentation.fields.map { descriptor in
+            ExtractedField(
+                kind: descriptor.kind,
+                label: descriptor.label,
+                value: "",
+                requiresReview: true
+            )
+        }
     }
 
     private static func makeCaseNumber(now: Date = Date()) -> String {

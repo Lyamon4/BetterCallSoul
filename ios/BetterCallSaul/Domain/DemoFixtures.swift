@@ -16,10 +16,10 @@ enum DemoFixtures {
             EvidenceItem(fileName: "IMG_1847.PNG", fileSize: "2,4 МБ")
         ],
         extractedFields: [
-            ExtractedField(label: "Компания", value: "MegaPlus"),
-            ExtractedField(label: "Сумма", value: "24 900 ₸"),
-            ExtractedField(label: "Дата", value: "17 июля 2026"),
-            ExtractedField(label: "Тип", value: "Подписка", requiresReview: true)
+            ExtractedField(kind: .counterparty, label: "Сервис", value: "MegaPlus"),
+            ExtractedField(kind: .amount, label: "Сумма", value: "24 900 ₸"),
+            ExtractedField(kind: .date, label: "Дата списания", value: "17 июля 2026"),
+            ExtractedField(kind: .detail, label: "Дата отмены", value: "", requiresReview: true)
         ]
     )
 

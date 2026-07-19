@@ -24,14 +24,29 @@ final class CaseWorkflowStoreTests: XCTestCase {
         XCTAssertTrue(store.currentCase.number.hasPrefix("BCS-"))
     }
 
+    func testStartingFineCreatesFineSpecificFields() {
+        let store = CaseWorkflowStore()
+
+        store.start(type: .fine)
+
+        XCTAssertEqual(
+            store.currentCase.extractedFields.map(\.label),
+            ["Орган", "Номер постановления", "Сумма", "Дата"]
+        )
+        XCTAssertEqual(
+            store.currentCase.extractedFields.map(\.kind),
+            [.counterparty, .reference, .amount, .date]
+        )
+    }
+
     func testApplyingExtractionUpdatesEvidenceFactsAndAmount() {
         let store = CaseWorkflowStore()
         store.start(type: .subscription)
         let fields = [
-            ExtractedField(label: "Компания", value: "MegaPlus"),
-            ExtractedField(label: "Сумма", value: "24 900 ₸"),
-            ExtractedField(label: "Дата", value: "17 июля 2026"),
-            ExtractedField(label: "Тип", value: "Подписка")
+            ExtractedField(kind: .counterparty, label: "Сервис", value: "MegaPlus"),
+            ExtractedField(kind: .amount, label: "Сумма", value: "24 900 ₸"),
+            ExtractedField(kind: .date, label: "Дата списания", value: "17 июля 2026"),
+            ExtractedField(kind: .detail, label: "Дата отмены", value: "", requiresReview: true)
         ]
 
         store.applyExtraction(
@@ -48,13 +63,13 @@ final class CaseWorkflowStoreTests: XCTestCase {
     func testEditingFieldKeepsCaseFactsInSync() {
         let store = CaseWorkflowStore(seed: DemoFixtures.activeCase)
 
-        store.updateField(label: "Компания", value: "MegaPlus KZ")
+        store.updateField(label: "Сервис", value: "MegaPlus KZ")
         store.updateField(label: "Сумма", value: "31 500 ₸")
 
         XCTAssertEqual(store.currentCase.counterparty, "MegaPlus KZ")
         XCTAssertEqual(store.currentCase.amount, 31_500)
         XCTAssertEqual(
-            store.currentCase.extractedFields.first(where: { $0.label == "Компания" })?.value,
+            store.currentCase.extractedFields.first(where: { $0.label == "Сервис" })?.value,
             "MegaPlus KZ"
         )
     }
