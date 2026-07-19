@@ -132,7 +132,7 @@ struct HomeView: View {
                     .frame(minHeight: 44)
                     .foregroundStyle(BCSColor.ink)
                 }
-                .accessibilityIdentifier("caseType.\(type == .subscription ? "subscription" : type.id)")
+                .accessibilityIdentifier("caseType.\(type.routingIdentifier)")
                 BCSDivider()
             }
         }
@@ -181,9 +181,7 @@ struct HomeView: View {
 
     private func beginCase(_ type: CaseType) {
         closeSaulAssistant()
-        if !ProcessInfo.processInfo.arguments.contains("-ui-testing") {
-            workflow.start(type: type)
-        }
+        workflow.start(type: type)
         router.open(.evidence)
     }
 

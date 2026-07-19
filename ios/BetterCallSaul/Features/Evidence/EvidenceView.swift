@@ -13,13 +13,17 @@ struct EvidenceView: View {
     @State private var errorMessage: String?
     @State private var isVisible = false
 
+    private var presentation: CaseTypePresentation {
+        workflow.currentCase.type.presentation
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 topBar
-                BCSEditorialTitle(text: "Добавьте\nдоказательства", size: 42)
+                BCSEditorialTitle(text: presentation.title, size: 42)
                     .padding(.top, 14)
-                Text("Чек, списание или переписка помогут составить точное требование.")
+                Text(presentation.explanation)
                     .font(.bcsBody(16))
                     .foregroundStyle(BCSColor.secondary)
                     .padding(.top, 12)
@@ -96,20 +100,32 @@ struct EvidenceView: View {
 
     private var narrativeField: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Что произошло")
+            Text(presentation.narrativeLabel)
                 .font(.bcsBody(15, weight: .medium))
-            TextEditor(text: Binding(
-                get: { workflow.narrative },
-                set: { workflow.updateNarrative($0) }
-            ))
-            .font(.bcsBody(16))
-            .scrollContentBackground(.hidden)
-            .padding(10)
+            ZStack(alignment: .topLeading) {
+                TextEditor(text: Binding(
+                    get: { workflow.narrative },
+                    set: { workflow.updateNarrative($0) }
+                ))
+                .font(.bcsBody(16))
+                .scrollContentBackground(.hidden)
+                .padding(10)
+                .accessibilityIdentifier("caseNarrativeField")
+
+                if workflow.narrative.isEmpty {
+                    Text(presentation.narrativePlaceholder)
+                        .font(.bcsBody(16))
+                        .foregroundStyle(BCSColor.secondary.opacity(0.72))
+                        .padding(.horizontal, 15)
+                        .padding(.vertical, 18)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
             .frame(minHeight: 112)
             .background(BCSColor.surface)
             .overlay(RoundedRectangle(cornerRadius: 8).stroke(BCSColor.divider))
             .clipShape(RoundedRectangle(cornerRadius: 8))
-            .accessibilityIdentifier("caseNarrativeField")
         }
     }
 
@@ -166,9 +182,9 @@ struct EvidenceView: View {
                 Image(systemName: "doc.badge.arrow.up")
                     .font(.system(size: 28, weight: .regular))
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(workflow.currentCase.evidence.isEmpty ? "Добавить документ" : "Заменить документ")
+                    Text(workflow.currentCase.evidence.isEmpty ? presentation.uploadTitle : "Заменить документ")
                         .font(.bcsBody(17, weight: .medium))
-                    Text("Фото, PNG, JPG или PDF")
+                    Text(presentation.uploadHint)
                         .font(.bcsBody(12))
                         .foregroundStyle(BCSColor.secondary)
                 }

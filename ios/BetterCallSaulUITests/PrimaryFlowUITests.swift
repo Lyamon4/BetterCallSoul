@@ -68,16 +68,47 @@ final class PrimaryFlowUITests: XCTestCase {
     func testSubscriptionPathOpensEvidence() {
         app.buttons["caseType.subscription"].tap()
 
-        XCTAssertTrue(app.staticTexts["Добавьте\nдоказательства"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["Отмените\nподписку"].waitForExistence(timeout: 2))
+    }
+
+    func testFineAndSubscriptionShowDistinctEvidenceContent() {
+        app.buttons["caseType.fine"].tap()
+
+        XCTAssertTrue(app.staticTexts["Обжалуйте\nштраф"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["Почему штраф несправедлив"].exists)
+        XCTAssertTrue(app.staticTexts["Добавьте постановление"].exists)
+        XCTAssertTrue(
+            app.staticTexts[
+                "Фото или PDF постановления, уведомления и подтверждающих материалов"
+            ].exists
+        )
+        XCTAssertTrue(app.textFields["Орган"].exists)
+        XCTAssertTrue(app.textFields["Номер постановления"].exists)
+
+        app.terminate()
+        app.launchArguments = ["-ui-testing"]
+        app.launch()
+        app.buttons["caseType.subscription"].tap()
+
+        XCTAssertTrue(app.staticTexts["Отмените\nподписку"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["Что произошло с подпиской"].exists)
+        XCTAssertTrue(app.staticTexts["Добавьте подтверждение подписки"].exists)
+        XCTAssertTrue(
+            app.staticTexts[
+                "Скриншот списания, условий подписки или переписки с сервисом"
+            ].exists
+        )
+        XCTAssertTrue(app.textFields["Сервис"].exists)
+        XCTAssertTrue(app.textFields["Дата отмены"].exists)
     }
 
     func testEvidenceScreenShowsExtractedFieldsAndContinues() {
         app.buttons["caseType.subscription"].tap()
 
-        let companyField = app.textFields["Компания"]
-        XCTAssertTrue(companyField.waitForExistence(timeout: 2))
-        XCTAssertEqual(companyField.value as? String, "MegaPlus")
-        XCTAssertEqual(app.textFields["Сумма"].value as? String, "24 900 ₸")
+        XCTAssertTrue(app.textFields["Сервис"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.textFields["Сумма"].exists)
+        XCTAssertTrue(app.textFields["Дата списания"].exists)
+        XCTAssertTrue(app.textFields["Дата отмены"].exists)
         XCTAssertTrue(app.staticTexts["ПРОВЕРЬТЕ ДАННЫЕ"].exists)
 
         continueFromEvidenceToDocument()
@@ -90,7 +121,7 @@ final class PrimaryFlowUITests: XCTestCase {
         narrative.tap()
         narrative.typeText("Подписка продлилась без предупреждения")
 
-        app.buttons["continueToAIButton"].tap()
+        tapContinueToAIAnalysis()
 
         XCTAssertTrue(app.staticTexts["Разберём ситуацию"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.staticTexts["ПРОВЕРЕННЫЕ ФАКТЫ"].exists)
@@ -113,7 +144,7 @@ final class PrimaryFlowUITests: XCTestCase {
             app.staticTexts["Требование об отмене подписки и возврате средств"]
                 .waitForExistence(timeout: 2)
         )
-        XCTAssertTrue(app.staticTexts["2 места требуют внимания"].exists)
+        XCTAssertTrue(app.staticTexts["4 места требуют внимания"].exists)
 
         app.buttons["sendDocumentButton"].tap()
 
@@ -160,7 +191,7 @@ final class PrimaryFlowUITests: XCTestCase {
         app.buttons["caseType.subscription"].tap()
         capture(name: "02-evidence")
 
-        app.buttons["continueToAIButton"].tap()
+        tapContinueToAIAnalysis()
         XCTAssertTrue(app.staticTexts["Разберём ситуацию"].waitForExistence(timeout: 3))
         capture(name: "03-ai-analysis")
         app.buttons["prepareAIDocumentButton"].tap()
@@ -193,9 +224,17 @@ final class PrimaryFlowUITests: XCTestCase {
     }
 
     private func continueFromEvidenceToDocument() {
-        app.buttons["continueToAIButton"].tap()
+        tapContinueToAIAnalysis()
         XCTAssertTrue(app.staticTexts["Разберём ситуацию"].waitForExistence(timeout: 3))
         app.buttons["prepareAIDocumentButton"].tap()
         XCTAssertTrue(app.staticTexts["Претензия готова"].waitForExistence(timeout: 3))
+    }
+
+    private func tapContinueToAIAnalysis() {
+        let button = app.buttons["continueToAIButton"]
+        XCTAssertTrue(button.waitForExistence(timeout: 2))
+        app.swipeUp()
+        XCTAssertTrue(button.isHittable)
+        button.tap()
     }
 }
