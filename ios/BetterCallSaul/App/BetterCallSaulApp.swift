@@ -12,10 +12,8 @@ struct BetterCallSaulApp: App {
             services = ProcessInfo.processInfo.arguments.contains("-saul-clarification-testing")
                 ? .uiTestingWithClarification
                 : .uiTesting
-        } else if let configuration = try? AIConfiguration.bundled() {
-            services = .live(configuration: configuration)
         } else {
-            services = .localOnly
+            services = .bundled()
         }
         _workflow = State(
             initialValue: CaseWorkflowStore(seed: DemoFixtures.activeCase, services: services)

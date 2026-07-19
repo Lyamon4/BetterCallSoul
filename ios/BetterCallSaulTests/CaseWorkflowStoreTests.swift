@@ -3,6 +3,16 @@ import XCTest
 
 @MainActor
 final class CaseWorkflowStoreTests: XCTestCase {
+    func testRoutedCasePreservesProblemAndClarificationNarrative() {
+        let store = CaseWorkflowStore()
+
+        store.start(type: .fine)
+        store.updateNarrative("Пришёл штраф\nУточнение: За парковку")
+
+        XCTAssertEqual(store.currentCase.type, .fine)
+        XCTAssertEqual(store.narrative, "Пришёл штраф\nУточнение: За парковку")
+    }
+
     func testStartingCaseUsesSelectedTypeAndDraftStatus() {
         let store = CaseWorkflowStore()
 

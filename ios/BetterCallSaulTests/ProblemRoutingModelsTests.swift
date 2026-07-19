@@ -52,7 +52,10 @@ final class ProblemRoutingModelsTests: XCTestCase {
             #"{"action":"clarify","case_type":"fine","question":"Что случилось?"}"#,
             #"{"action":"clarify","case_type":null,"question":"   "}"#,
             #"{"action":"clarify","case_type":null,"question":null}"#,
-            #"{"case_type":"fine","question":null}"#
+            #"{"case_type":"fine","question":null}"#,
+            #"{"action":"route","case_type":"fine"}"#,
+            #"{"action":"clarify","question":"Это подписка?"}"#,
+            #"{"action":"route","case_type":"fine","question":null,"extra":true}"#
         ]
 
         for response in invalidResponses {

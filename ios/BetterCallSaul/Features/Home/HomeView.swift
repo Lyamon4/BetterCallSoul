@@ -195,7 +195,7 @@ struct HomeView: View {
     private func cancelSaulWork() {
         routingTask?.cancel()
         routingTask = nil
-        assistant.cancel()
+        assistant.reset()
     }
 
     private func scheduleRouting(to type: CaseType) {

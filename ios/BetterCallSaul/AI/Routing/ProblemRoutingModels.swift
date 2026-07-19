@@ -59,6 +59,8 @@ enum ProblemRoutingResponseDecoder {
     ) throws -> ProblemRoutingDecision {
         let json = stripMarkdownFence(from: response)
         guard let data = json.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              Set(object.keys) == Set(["action", "case_type", "question"]),
               let wire = try? JSONDecoder().decode(WireResponse.self, from: data) else {
             throw ProblemRoutingError.invalidResponse
         }

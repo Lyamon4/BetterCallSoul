@@ -49,6 +49,76 @@ struct AIServiceContainer: Sendable {
         )
     }
 
+    static func bundled(
+        bundle: Bundle = .main,
+        transport: any HTTPTransport = URLSessionHTTPTransport()
+    ) -> Self {
+        let info = bundle.infoDictionary ?? [:]
+        let values = ["GeminiAPIKey", "GeminiModel", "DeepSeekAPIKey", "DeepSeekModel"]
+            .reduce(into: [String: String]()) { result, key in
+                if let value = info[key] as? String {
+                    result[key] = value
+                }
+            }
+        return runtime(values: values, transport: transport)
+    }
+
+    static func runtime(
+        values: [String: String],
+        transport: any HTTPTransport = URLSessionHTTPTransport()
+    ) -> Self {
+        let geminiKey = configuredValue("GeminiAPIKey", in: values)
+        let geminiModel = configuredValue("GeminiModel", in: values)
+        let deepSeekKey = configuredValue("DeepSeekAPIKey", in: values)
+        let deepSeekModel = configuredValue("DeepSeekModel", in: values)
+
+        let evidenceAnalyzer: any EvidenceAnalyzing
+        let fallbackClassifier: any ProblemClassifying
+        if let geminiKey, let geminiModel {
+            evidenceAnalyzer = GeminiVisionClient(
+                apiKey: geminiKey,
+                model: geminiModel,
+                transport: transport
+            )
+            fallbackClassifier = GeminiProblemClassifier(
+                apiKey: geminiKey,
+                model: geminiModel,
+                transport: transport
+            )
+        } else {
+            evidenceAnalyzer = UnavailableEvidenceAnalyzer()
+            fallbackClassifier = UnavailableProblemClassifier()
+        }
+
+        let legalTextGenerator: any LegalTextGenerating
+        let primaryClassifier: any ProblemClassifying
+        if let deepSeekKey, let deepSeekModel {
+            legalTextGenerator = DeepSeekTextClient(
+                apiKey: deepSeekKey,
+                model: deepSeekModel,
+                transport: transport
+            )
+            primaryClassifier = DeepSeekProblemClassifier(
+                apiKey: deepSeekKey,
+                model: deepSeekModel,
+                transport: transport
+            )
+        } else {
+            legalTextGenerator = LocalLegalTextGenerator()
+            primaryClassifier = UnavailableProblemClassifier()
+        }
+
+        return Self(
+            evidenceAnalyzer: evidenceAnalyzer,
+            legalTextGenerator: legalTextGenerator,
+            localTextGenerator: LocalLegalTextGenerator(),
+            problemClassifier: FallbackProblemClassifier(
+                primary: primaryClassifier,
+                fallback: fallbackClassifier
+            )
+        )
+    }
+
     static var localOnly: Self {
         Self(
             evidenceAnalyzer: UnavailableEvidenceAnalyzer(),
@@ -74,6 +144,17 @@ struct AIServiceContainer: Sendable {
             localTextGenerator: LocalLegalTextGenerator(),
             problemClassifier: UITestingProblemClassifier(asksForClarification: true)
         )
+    }
+
+    private static func configuredValue(
+        _ key: String,
+        in values: [String: String]
+    ) -> String? {
+        guard let value = values[key]?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !value.isEmpty else {
+            return nil
+        }
+        return value
     }
 }
 

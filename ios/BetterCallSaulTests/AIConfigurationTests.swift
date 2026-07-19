@@ -1,6 +1,33 @@
 import XCTest
 @testable import BetterCallSaul
 
+private actor RuntimeRoutingTransport: HTTPTransport {
+    private var urls: [URL] = []
+
+    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        urls.append(request.url!)
+        let routing = #"{"action":"route","case_type":"bill","question":null}"#
+        let data = try JSONSerialization.data(withJSONObject: [
+            "status": "completed",
+            "steps": [[
+                "type": "model_output",
+                "content": [["type": "text", "text": routing]]
+            ]]
+        ])
+        return (
+            data,
+            HTTPURLResponse(
+                url: request.url!,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+        )
+    }
+
+    func recordedURLs() -> [URL] { urls }
+}
+
 final class AIConfigurationTests: XCTestCase {
     func testConfigurationReportsBothBundledProviders() throws {
         let configuration = try AIConfiguration(values: [
@@ -81,5 +108,33 @@ final class AIConfigurationTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? ProblemRoutingError, .unavailable)
         }
+    }
+
+    func testRuntimeConfigurationFallsBackToGeminiWhenDeepSeekKeyIsMissing() async throws {
+        let transport = RuntimeRoutingTransport()
+        let services = AIServiceContainer.runtime(
+            values: [
+                "GeminiAPIKey": "gemini-key",
+                "GeminiModel": "gemini-model",
+                "DeepSeekModel": "deepseek-model"
+            ],
+            transport: transport
+        )
+
+        let decision = try await services.problemClassifier.classify(
+            ProblemRoutingRequest(
+                problem: "Мне выставили завышенный счёт",
+                clarificationQuestion: nil,
+                clarificationAnswer: nil,
+                clarificationAllowed: true
+            )
+        )
+        let urls = await transport.recordedURLs()
+
+        XCTAssertEqual(decision, .route(caseType: .bill))
+        XCTAssertEqual(
+            urls.map(\.absoluteString),
+            ["https://generativelanguage.googleapis.com/v1beta/interactions"]
+        )
     }
 }

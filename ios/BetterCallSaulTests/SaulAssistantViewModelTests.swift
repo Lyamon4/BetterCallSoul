@@ -159,6 +159,24 @@ final class SaulAssistantViewModelTests: XCTestCase {
         XCTAssertNotEqual(viewModel.state, .routing(.bill))
     }
 
+    func testResetDiscardsCurrentDialogue() async {
+        let classifier = QueuedProblemClassifier([
+            .decision(.clarify(question: "Это подписка?"))
+        ])
+        let viewModel = SaulAssistantViewModel(classifier: classifier)
+        viewModel.problemText = "Списали деньги"
+        viewModel.submit()
+        await waitUntil { viewModel.state == .askingClarification(question: "Это подписка?") }
+        viewModel.clarificationText = "Да"
+
+        viewModel.reset()
+
+        XCTAssertEqual(viewModel.state, .askingProblem)
+        XCTAssertEqual(viewModel.problemText, "")
+        XCTAssertEqual(viewModel.clarificationText, "")
+        XCTAssertNil(viewModel.clarificationQuestion)
+    }
+
     private func waitUntil(
         timeoutIterations: Int = 100,
         condition: @escaping @MainActor () -> Bool
