@@ -29,6 +29,15 @@ private actor RuntimeRoutingTransport: HTTPTransport {
 }
 
 final class AIConfigurationTests: XCTestCase {
+    func testHostAppBundleContainsProviderConfiguration() throws {
+        let configuration = try AIConfiguration.bundled()
+
+        XCTAssertEqual(configuration.geminiModel, "gemini-3.5-flash")
+        XCTAssertEqual(configuration.deepSeekModel, "deepseek-v4-pro")
+        XCTAssertFalse(configuration.geminiAPIKey.isEmpty)
+        XCTAssertFalse(configuration.deepSeekAPIKey.isEmpty)
+    }
+
     func testConfigurationReportsBothBundledProviders() throws {
         let configuration = try AIConfiguration(values: [
             "GeminiAPIKey": "gemini-test-key",

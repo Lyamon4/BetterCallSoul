@@ -16,18 +16,21 @@ targets:
       Release: Config/Secrets.xcconfig
     sources:
       - path: BetterCallSaul
+    info:
+      path: BetterCallSaul/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: BetterCallSaul
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UIApplicationSupportsIndirectInputEvents: true
+        UILaunchScreen: {}
+        GeminiAPIKey: $(GEMINI_API_KEY)
+        GeminiModel: $(GEMINI_MODEL)
+        DeepSeekAPIKey: $(DEEPSEEK_API_KEY)
+        DeepSeekModel: $(DEEPSEEK_MODEL)
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: kz.techvision.bettercallsaul
-        GENERATE_INFOPLIST_FILE: true
-        INFOPLIST_KEY_CFBundleDisplayName: BetterCallSaul
-        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: true
-        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: true
-        INFOPLIST_KEY_UILaunchScreen_Generation: true
-        INFOPLIST_KEY_GeminiAPIKey: $(GEMINI_API_KEY)
-        INFOPLIST_KEY_GeminiModel: $(GEMINI_MODEL)
-        INFOPLIST_KEY_DeepSeekAPIKey: $(DEEPSEEK_API_KEY)
-        INFOPLIST_KEY_DeepSeekModel: $(DEEPSEEK_MODEL)
         TARGETED_DEVICE_FAMILY: "1"
     scheme:
       testTargets:
