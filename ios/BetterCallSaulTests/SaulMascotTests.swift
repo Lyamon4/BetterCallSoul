@@ -14,12 +14,16 @@ final class SaulMascotTests: XCTestCase {
         }
     }
 
-    func testHelpCopyIsDeterministicAndProductSafe() {
-        XCTAssertEqual(
-            SaulHelpCopy.line(at: 0),
-            "Расскажите как было — я помогу собрать главное."
+    func testStaticTipComponentsWereRemovedAfterAssistantLaunch() throws {
+        let source = try String(
+            contentsOf: URL(fileURLWithPath: #filePath)
+                .deletingLastPathComponent()
+                .deletingLastPathComponent()
+                .appendingPathComponent("BetterCallSaul/DesignSystem/SaulMascotView.swift"),
+            encoding: .utf8
         )
-        XCTAssertEqual(SaulHelpCopy.line(at: 3), SaulHelpCopy.line(at: 0))
-        XCTAssertFalse(SaulHelpCopy.lines.joined().contains("AI"))
+
+        XCTAssertFalse(source.contains("SaulHelpCopy"))
+        XCTAssertFalse(source.contains("SaulTipBubble"))
     }
 }

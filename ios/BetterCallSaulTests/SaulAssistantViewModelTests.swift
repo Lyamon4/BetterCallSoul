@@ -73,6 +73,10 @@ final class SaulAssistantViewModelTests: XCTestCase {
         await waitUntil { viewModel.state == .routing(.fine) }
 
         XCTAssertEqual(viewModel.state, .routing(.fine))
+        XCTAssertEqual(
+            viewModel.visibleMessage,
+            "Похоже, нужно обжаловать штраф. Открываю обращение."
+        )
         XCTAssertEqual(viewModel.composedNarrative, "Мне выписали штраф")
     }
 

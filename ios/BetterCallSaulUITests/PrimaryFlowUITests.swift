@@ -18,19 +18,51 @@ final class PrimaryFlowUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["activeCaseCard"].exists)
     }
 
-    func testHomeSaulRevealsAndDismissesHelpfulCopy() {
+    func testHomeSaulRoutesProblemToEvidence() {
         let saul = app.buttons["saulMascotButton"]
         XCTAssertTrue(saul.waitForExistence(timeout: 3))
 
         saul.tap()
-        XCTAssertTrue(
-            app.staticTexts["Расскажите как было — я помогу собрать главное."]
-                .waitForExistence(timeout: 2)
-        )
-        XCTAssertTrue(app.descendants(matching: .any)["saulTipBubble"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["saulAssistantSheet"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["Расскажите Солу"].exists)
+        XCTAssertTrue(app.staticTexts["Что случилось? Опишите своими словами."].exists)
 
-        saul.tap()
-        XCTAssertFalse(app.staticTexts["Расскажите как было — я помогу собрать главное."].exists)
+        let field = app.textFields["saulProblemField"]
+        XCTAssertTrue(field.waitForExistence(timeout: 2))
+        field.tap()
+        field.typeText("Мне выписали штраф за парковку")
+        app.buttons["saulSubmitButton"].tap()
+
+        let narrative = app.textViews["caseNarrativeField"]
+        XCTAssertTrue(narrative.waitForExistence(timeout: 3))
+        XCTAssertEqual(narrative.value as? String, "Мне выписали штраф за парковку")
+    }
+
+    func testHomeSaulClarifiesThenRoutesToEvidence() {
+        app.terminate()
+        app.launchArguments = ["-ui-testing", "-saul-clarification-testing"]
+        app.launch()
+
+        app.buttons["saulMascotButton"].tap()
+        let problemField = app.textFields["saulProblemField"]
+        XCTAssertTrue(problemField.waitForExistence(timeout: 2))
+        problemField.tap()
+        problemField.typeText("Со мной случилась непонятная ситуация")
+        app.buttons["saulSubmitButton"].tap()
+
+        XCTAssertTrue(app.staticTexts["Это штраф от госоргана?"].waitForExistence(timeout: 3))
+        let clarificationField = app.textFields["saulClarificationField"]
+        XCTAssertTrue(clarificationField.waitForExistence(timeout: 2))
+        clarificationField.tap()
+        clarificationField.typeText("Да, штраф за парковку")
+        app.buttons["saulSubmitButton"].tap()
+
+        let narrative = app.textViews["caseNarrativeField"]
+        XCTAssertTrue(narrative.waitForExistence(timeout: 4))
+        XCTAssertEqual(
+            narrative.value as? String,
+            "Со мной случилась непонятная ситуация\nУточнение: Да, штраф за парковку"
+        )
     }
 
     func testSubscriptionPathOpensEvidence() {

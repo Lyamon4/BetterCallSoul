@@ -9,6 +9,7 @@ final class ProductionSurfaceTests: XCTestCase {
             .appendingPathComponent("BetterCallSaul")
         let paths = [
             "Features/Home/HomeView.swift",
+            "Features/Home/SaulAssistantSheet.swift",
             "Features/Evidence/EvidenceView.swift",
             "Features/AIAnalysis/AIAnalysisView.swift",
             "Features/Profile/ProfileView.swift",

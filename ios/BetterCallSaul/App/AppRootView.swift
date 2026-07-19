@@ -3,6 +3,7 @@ import SwiftUI
 struct AppRootView: View {
     @Bindable var router: AppRouter
     @Bindable var workflow: CaseWorkflowStore
+    let problemClassifier: any ProblemClassifying
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -33,7 +34,11 @@ struct AppRootView: View {
     private var currentTab: some View {
         switch router.selectedTab {
         case .home:
-            HomeView(router: router, workflow: workflow)
+            HomeView(
+                router: router,
+                workflow: workflow,
+                problemClassifier: problemClassifier
+            )
         case .cases:
             CasesView(legalCase: workflow.currentCase)
         case .tools:

@@ -5,20 +5,27 @@ struct HomeView: View {
     @Bindable var workflow: CaseWorkflowStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isVisible = false
-    @State private var isSaulTipVisible = false
-    @State private var saulTipIndex = 0
+    @State private var isSaulAssistantPresented = false
+    @State private var assistant: SaulAssistantViewModel
+    @State private var routingTask: Task<Void, Never>?
+
+    init(
+        router: AppRouter,
+        workflow: CaseWorkflowStore,
+        problemClassifier: any ProblemClassifying
+    ) {
+        self.router = router
+        self.workflow = workflow
+        _assistant = State(
+            initialValue: SaulAssistantViewModel(classifier: problemClassifier)
+        )
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 brandHeader
                     .padding(.bottom, 16)
-
-                if isSaulTipVisible {
-                    SaulTipBubble(text: SaulHelpCopy.line(at: saulTipIndex))
-                        .padding(.bottom, 14)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                }
 
                 Text("Добрый вечер, Алим")
                     .font(.bcsBody(17))
@@ -57,7 +64,16 @@ struct HomeView: View {
             }
         }
         .onDisappear {
-            isSaulTipVisible = false
+            routingTask?.cancel()
+        }
+        .sheet(isPresented: $isSaulAssistantPresented, onDismiss: cancelSaulWork) {
+            SaulAssistantSheet(assistant: assistant) {
+                closeSaulAssistant()
+            }
+        }
+        .onChange(of: assistant.state) { _, state in
+            guard case .routing(let type) = state else { return }
+            scheduleRouting(to: type)
         }
     }
 
@@ -76,17 +92,12 @@ struct HomeView: View {
             }
             Spacer()
             Button {
-                withAnimation(BCSMotion.spring(reduceMotion: reduceMotion)) {
-                    if isSaulTipVisible {
-                        isSaulTipVisible = false
-                        saulTipIndex = (saulTipIndex + 1) % SaulHelpCopy.lines.count
-                    } else {
-                        isSaulTipVisible = true
-                    }
-                }
+                routingTask?.cancel()
+                assistant.reset()
+                isSaulAssistantPresented = true
             } label: {
                 SaulMascotView(
-                    state: isSaulTipVisible ? .talking : .idle,
+                    state: .idle,
                     size: 96,
                     isDecorative: false
                 )
@@ -94,7 +105,7 @@ struct HomeView: View {
             .buttonStyle(.plain)
             .frame(minWidth: 44, minHeight: 44)
             .accessibilityLabel("Сол, помощник")
-            .accessibilityHint("Показывает короткую подсказку")
+            .accessibilityHint("Открывает помощника по выбору обращения")
             .accessibilityIdentifier("saulMascotButton")
         }
     }
@@ -169,11 +180,43 @@ struct HomeView: View {
     }
 
     private func beginCase(_ type: CaseType) {
-        isSaulTipVisible = false
+        closeSaulAssistant()
         if !ProcessInfo.processInfo.arguments.contains("-ui-testing") {
             workflow.start(type: type)
         }
         router.open(.evidence)
+    }
+
+    private func closeSaulAssistant() {
+        cancelSaulWork()
+        isSaulAssistantPresented = false
+    }
+
+    private func cancelSaulWork() {
+        routingTask?.cancel()
+        routingTask = nil
+        assistant.cancel()
+    }
+
+    private func scheduleRouting(to type: CaseType) {
+        routingTask?.cancel()
+        let narrative = assistant.composedNarrative
+        routingTask = Task { @MainActor in
+            if !reduceMotion {
+                try? await Task.sleep(for: .milliseconds(650))
+            }
+            guard !Task.isCancelled,
+                  isSaulAssistantPresented,
+                  assistant.state == .routing(type) else {
+                return
+            }
+
+            workflow.start(type: type)
+            workflow.updateNarrative(narrative)
+            isSaulAssistantPresented = false
+            router.open(.evidence)
+            routingTask = nil
+        }
     }
 
     private var activeCaseDeadline: String {

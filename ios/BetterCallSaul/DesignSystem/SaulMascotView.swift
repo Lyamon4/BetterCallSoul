@@ -20,18 +20,6 @@ enum SaulMascotState: String, CaseIterable {
     }
 }
 
-enum SaulHelpCopy {
-    static let lines = [
-        "Расскажите как было — я помогу собрать главное.",
-        "Чеки и скриншоты сделают обращение сильнее.",
-        "Перед отправкой всё можно проверить."
-    ]
-
-    static func line(at index: Int) -> String {
-        lines[index % lines.count]
-    }
-}
-
 struct SaulMascotView: View {
     let state: SaulMascotState
     let size: CGFloat
@@ -97,22 +85,5 @@ struct SaulMascotView: View {
                 isAnimated = true
             }
         }
-    }
-}
-
-struct SaulTipBubble: View {
-    let text: String
-
-    var body: some View {
-        Text(text)
-            .font(.bcsBody(14, weight: .medium))
-            .foregroundStyle(BCSColor.ink)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 11)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(BCSColor.paleYellow)
-            .overlay(RoundedRectangle(cornerRadius: 8).stroke(BCSColor.divider))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .accessibilityIdentifier("saulTipBubble")
     }
 }
