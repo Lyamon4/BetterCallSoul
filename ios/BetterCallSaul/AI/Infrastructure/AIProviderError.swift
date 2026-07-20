@@ -13,6 +13,7 @@ enum AIProviderError: Error, Equatable, LocalizedError, Sendable {
     case quotaExceeded(AIProvider)
     case invalidResponse(AIProvider)
     case payloadTooLarge(maximumMB: Int)
+    case timedOut
     case transport(String)
 
     static func httpStatus(_ status: Int, provider: AIProvider) -> Self {
@@ -40,6 +41,8 @@ enum AIProviderError: Error, Equatable, LocalizedError, Sendable {
             "Не удалось обработать данные. Попробуйте ещё раз."
         case .payloadTooLarge(let maximumMB):
             "Файл слишком большой. Максимум — \(maximumMB) МБ."
+        case .timedOut:
+            "Сервис обработки отвечает слишком долго."
         case .transport:
             "Не удалось связаться с сервисом обработки."
         }

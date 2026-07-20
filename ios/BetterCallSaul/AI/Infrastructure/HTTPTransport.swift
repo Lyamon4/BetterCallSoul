@@ -21,7 +21,14 @@ struct URLSessionHTTPTransport: HTTPTransport {
         } catch let error as AIProviderError {
             throw error
         } catch {
-            throw AIProviderError.transport(error.localizedDescription)
+            throw Self.mapError(error)
         }
+    }
+
+    static func mapError(_ error: Error) -> AIProviderError {
+        if let urlError = error as? URLError, urlError.code == .timedOut {
+            return .timedOut
+        }
+        return .transport(error.localizedDescription)
     }
 }

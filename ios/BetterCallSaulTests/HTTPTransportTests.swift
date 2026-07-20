@@ -2,6 +2,13 @@ import XCTest
 @testable import BetterCallSaul
 
 final class HTTPTransportTests: XCTestCase {
+    func testTimedOutURLErrorMapsToTypedTimeout() {
+        XCTAssertEqual(
+            URLSessionHTTPTransport.mapError(URLError(.timedOut)),
+            .timedOut
+        )
+    }
+
     func testStatusMappingPreservesProviderSpecificFailure() {
         XCTAssertEqual(
             AIProviderError.httpStatus(429, provider: .deepSeek),

@@ -66,6 +66,7 @@ final class DeepSeekTextClientTests: XCTestCase {
         XCTAssertEqual(responseFormat["type"] as? String, "json_object")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer test-key")
         XCTAssertEqual(request.url?.absoluteString, "https://api.deepseek.com/chat/completions")
+        XCTAssertEqual(request.timeoutInterval, 15)
     }
 
     func testRejectsMoreThanFiveQuestions() async throws {
@@ -112,9 +113,12 @@ final class DeepSeekTextClientTests: XCTestCase {
         let result = try await client.generateDocument(
             AIDocumentRequest(caseContext: Self.caseRequest, analysis: analysis)
         )
+        let recordedRequest = await transport.recordedRequest()
+        let request = try XCTUnwrap(recordedRequest)
 
         XCTAssertEqual(result.responseDays, 10)
         XCTAssertEqual(result.demands, ["Вернуть 24 900 ₸"])
+        XCTAssertEqual(request.timeoutInterval, 15)
     }
 
     private static let caseRequest = CaseAIRequest(

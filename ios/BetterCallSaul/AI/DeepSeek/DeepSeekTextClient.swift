@@ -2,6 +2,7 @@ import Foundation
 
 struct DeepSeekTextClient: LegalTextGenerating {
     private static let endpoint = URL(string: "https://api.deepseek.com/chat/completions")!
+    private static let timeoutInterval: TimeInterval = 15
 
     let apiKey: String
     let model: String
@@ -29,6 +30,7 @@ struct DeepSeekTextClient: LegalTextGenerating {
 
     private func complete(messages: [DeepSeekMessage]) async throws -> String {
         var request = URLRequest(url: Self.endpoint)
+        request.timeoutInterval = Self.timeoutInterval
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
