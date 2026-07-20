@@ -9,7 +9,7 @@ For a fresh local iOS checkout, create the ignored secrets file before opening
 the Xcode project:
 
 ```bash
-cp ios/Config/Secrets.xcconfig.example ios/Config/Secrets.xcconfig
+cp ios/Config/Secrets.local.xcconfig.example ios/Config/Secrets.local.xcconfig
 ```
 
 Fill it locally or through your team secret manager. Never commit the populated
@@ -42,7 +42,7 @@ SUPABASE_SECRET_KEY=
 ```
 
 `SUPABASE_SECRET_KEY` is backend-only. Never copy it into the iOS project,
-including `ios/Config/Secrets.xcconfig`, and never commit a populated
+including `ios/Config/Secrets.local.xcconfig`, and never commit a populated
 `backend/.env`.
 
 Run the backend suite with:
