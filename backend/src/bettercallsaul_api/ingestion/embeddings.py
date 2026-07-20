@@ -1,5 +1,6 @@
 import asyncio
 import math
+import re
 from collections.abc import Awaitable, Callable, Sequence
 
 import httpx
@@ -117,7 +118,8 @@ class GeminiEmbeddingClient:
                 raise EmbeddingProviderError("Gemini embedding failed.") from error
 
             if response.status_code in {429, 500, 502, 503, 504}:
-                if await self._retry(attempt):
+                retry_delay = self._provider_retry_delay(response)
+                if await self._retry(attempt, retry_delay):
                     continue
                 raise EmbeddingProviderError("Gemini embedding failed.")
             if response.status_code != 200:
@@ -148,8 +150,44 @@ class GeminiEmbeddingClient:
             raise ValueError("embedding must contain finite values")
         return vector
 
-    async def _retry(self, attempt: int) -> bool:
+    async def _retry(
+        self,
+        attempt: int,
+        provider_delay: float | None = None,
+    ) -> bool:
         if attempt >= len(self.retry_delays):
             return False
-        await self.sleep(self.retry_delays[attempt])
+        delay = provider_delay if provider_delay is not None else self.retry_delays[attempt]
+        await self.sleep(min(max(delay, 0.0), 60.0))
         return True
+
+    @staticmethod
+    def _provider_retry_delay(response: httpx.Response) -> float | None:
+        retry_after = response.headers.get("retry-after")
+        if retry_after:
+            try:
+                return float(retry_after)
+            except ValueError:
+                pass
+        try:
+            decoded = response.json()
+        except (TypeError, ValueError):
+            return None
+        if not isinstance(decoded, dict):
+            return None
+        error = decoded.get("error")
+        if not isinstance(error, dict):
+            return None
+        details = error.get("details", [])
+        if not isinstance(details, list):
+            return None
+        for detail in details:
+            if not isinstance(detail, dict):
+                continue
+            raw_delay = detail.get("retryDelay")
+            if not isinstance(raw_delay, str):
+                continue
+            match = re.fullmatch(r"([0-9]+(?:\.[0-9]+)?)s", raw_delay)
+            if match:
+                return float(match.group(1))
+        return None

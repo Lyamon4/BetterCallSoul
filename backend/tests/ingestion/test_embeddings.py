@@ -162,6 +162,52 @@ async def test_embedding_client_retries_transient_failure_without_leaking_body()
 
 
 @pytest.mark.asyncio
+async def test_embedding_client_honors_provider_retry_delay_for_quota_window() -> None:
+    attempts = 0
+    sleeps: list[float] = []
+
+    async def record_sleep(delay: float) -> None:
+        sleeps.append(delay)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            return httpx.Response(
+                429,
+                json={
+                    "error": {
+                        "status": "RESOURCE_EXHAUSTED",
+                        "details": [
+                            {
+                                "@type": "type.googleapis.com/google.rpc.RetryInfo",
+                                "retryDelay": "17.25s",
+                            }
+                        ],
+                    }
+                },
+                request=request,
+            )
+        return httpx.Response(
+            200,
+            json={"embeddings": [{"values": [0.1] * 768}]},
+            request=request,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        embedded = await GeminiEmbeddingClient(
+            settings(),
+            client,
+            retry_delays=(0,),
+            sleep=record_sleep,
+        ).embed_documents((legal_chunk(0, "Текст."),))
+
+    assert attempts == 2
+    assert sleeps == [17.25]
+    assert len(embedded[0].embedding) == 768
+
+
+@pytest.mark.asyncio
 async def test_embedding_provider_error_is_sanitized() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
