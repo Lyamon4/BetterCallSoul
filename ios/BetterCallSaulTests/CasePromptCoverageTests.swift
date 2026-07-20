@@ -20,7 +20,8 @@ final class CasePromptCoverageTests: XCTestCase {
 
         let analysisPrompt = DeepSeekPrompts.analysisSystem(for: request.caseType)
             + (try DeepSeekPrompts.analysis(request: request))
-        let documentPrompt = DeepSeekPrompts.documentSystem() + (try DeepSeekPrompts.document(
+        let documentPrompt = DeepSeekPrompts.documentSystem(for: request.caseType)
+            + (try DeepSeekPrompts.document(
             request: AIDocumentRequest(
                 caseContext: request,
                 analysis: CaseAIAnalysis(
@@ -35,5 +36,21 @@ final class CasePromptCoverageTests: XCTestCase {
         XCTAssertTrue(analysisPrompt.contains("не выдумывай"))
         XCTAssertTrue(analysisPrompt.contains("Не цитируй"))
         XCTAssertTrue(documentPrompt.contains("только факты"))
+    }
+
+    func testDocumentPromptRequiresCompleteKazakhstanLegalClaim() {
+        let consumerPrompt = DeepSeekPrompts.documentSystem(for: .subscription)
+        let finePrompt = DeepSeekPrompts.documentSystem(for: .fine)
+        let normalizedConsumerPrompt = consumerPrompt.lowercased()
+        let normalizedFinePrompt = finePrompt.lowercased()
+
+        XCTAssertTrue(consumerPrompt.contains("Республики Казахстан"))
+        XCTAssertTrue(normalizedConsumerPrompt.contains("полноценный готовый документ"))
+        XCTAssertTrue(consumerPrompt.contains("legalGrounds"))
+        XCTAssertTrue(consumerPrompt.contains("nonComplianceActions"))
+        XCTAssertTrue(normalizedConsumerPrompt.contains("статьи 42-4"))
+        XCTAssertTrue(normalizedConsumerPrompt.contains("десяти календарных дней"))
+        XCTAssertTrue(normalizedConsumerPrompt.contains("не выдумывай норму"))
+        XCTAssertTrue(normalizedFinePrompt.contains("не применяй автоматически закон республики казахстан «о защите прав потребителей»"))
     }
 }

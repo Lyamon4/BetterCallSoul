@@ -204,8 +204,14 @@ private struct UITestingLegalTextGenerator: LegalTextGenerating {
             recipient: request.caseContext.reviewedFields["Компания"],
             subject: "Требование об отмене подписки и возврате средств",
             facts: [request.caseContext.narrative].filter { !$0.isEmpty },
+            legalGrounds: [
+                "Согласно пунктам 1 и 2 статьи 42-4 Закона Республики Казахстан «О защите прав потребителей» потребитель вправе направить претензию, а получатель при несогласии обязан предоставить мотивированный письменный ответ."
+            ],
             demands: ["Отменить дальнейшее продление", "Рассмотреть возврат списанных средств"],
-            responseDays: nil,
+            responseDays: 10,
+            nonComplianceActions: [
+                "При отказе или отсутствии ответа обратиться в уполномоченный орган в сфере защиты прав потребителей."
+            ],
             attachmentDescription: request.caseContext.evidenceSummary ?? "Подтверждающие материалы",
             unresolvedIssues: []
         )

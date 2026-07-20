@@ -67,8 +67,10 @@ struct AIDocumentSections: Codable, Equatable, Sendable {
     let recipient: String?
     let subject: String
     let facts: [String]
+    let legalGrounds: [String]
     let demands: [String]
     let responseDays: Int?
+    let nonComplianceActions: [String]
     let attachmentDescription: String
     let unresolvedIssues: [String]
 }

@@ -47,7 +47,13 @@ final class LocalLegalTextGeneratorTests: XCTestCase {
         XCTAssertEqual(document.recipient, "KazNet")
         XCTAssertEqual(
             document.unresolvedIssues,
-            ["Уточнить поле «Сумма»", "Уточнить поле «Номер счёта»"]
+            [
+                "Уточнить поле «Сумма»",
+                "Уточнить поле «Номер счёта»",
+                "Проверить применимые правовые основания и срок ответа"
+            ]
         )
+        XCTAssertTrue(document.legalGrounds.isEmpty)
+        XCTAssertNil(document.responseDays)
     }
 }

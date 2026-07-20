@@ -44,12 +44,15 @@ struct LocalLegalTextGenerator: LegalTextGenerating {
             recipient: recipient,
             subject: subject(for: context.caseType),
             facts: facts.isEmpty ? ["Обстоятельства указаны пользователем в обращении."] : facts,
+            legalGrounds: [],
             demands: demands(for: context.caseType),
             responseDays: nil,
+            nonComplianceActions: [],
             attachmentDescription: context.evidenceSummary == nil
                 ? "Подтверждающие материалы не приложены"
                 : "Приложенные подтверждающие материалы",
             unresolvedIssues: missing.map { "Уточнить поле «\($0.label)»" }
+                + ["Проверить применимые правовые основания и срок ответа"]
         )
     }
 

@@ -100,7 +100,7 @@ final class DeepSeekTextClientTests: XCTestCase {
     }
 
     func testGeneratesTypedDocumentSections() async throws {
-        let document = #"{"recipient":"ТОО MegaPlus","subject":"Требование о возврате","facts":["17 июля списано 24 900 ₸"],"demands":["Вернуть 24 900 ₸"],"responseDays":10,"attachmentDescription":"Копия чека","unresolvedIssues":[]}"#
+        let document = #"{"recipient":"ТОО MegaPlus","subject":"Требование о возврате","facts":["17 июля списано 24 900 ₸"],"legalGrounds":["Пункты 1 и 2 статьи 42-4 Закона Республики Казахстан «О защите прав потребителей»"],"demands":["Вернуть 24 900 ₸"],"responseDays":10,"nonComplianceActions":["Обратиться в уполномоченный орган"],"attachmentDescription":"Копия чека","unresolvedIssues":[]}"#
         let transport = try DeepSeekRecordingTransport(content: document)
         let client = DeepSeekTextClient(apiKey: "key", model: "deepseek-v4-pro", transport: transport)
         let analysis = CaseAIAnalysis(
@@ -115,9 +115,17 @@ final class DeepSeekTextClientTests: XCTestCase {
         )
         let recordedRequest = await transport.recordedRequest()
         let request = try XCTUnwrap(recordedRequest)
+        let bodyData = try XCTUnwrap(request.httpBody)
+        let object = try XCTUnwrap(
+            try JSONSerialization.jsonObject(with: bodyData) as? [String: Any]
+        )
+        let thinking = try XCTUnwrap(object["thinking"] as? [String: Any])
 
         XCTAssertEqual(result.responseDays, 10)
+        XCTAssertEqual(result.legalGrounds.count, 1)
         XCTAssertEqual(result.demands, ["Вернуть 24 900 ₸"])
+        XCTAssertEqual(result.nonComplianceActions, ["Обратиться в уполномоченный орган"])
+        XCTAssertEqual(thinking["type"] as? String, "disabled")
         XCTAssertEqual(request.timeoutInterval, 15)
     }
 

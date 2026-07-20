@@ -22,7 +22,10 @@ struct DeepSeekTextClient: LegalTextGenerating {
 
     func generateDocument(_ request: AIDocumentRequest) async throws -> AIDocumentSections {
         let content = try await complete(messages: [
-            DeepSeekMessage(role: "system", content: DeepSeekPrompts.documentSystem()),
+            DeepSeekMessage(
+                role: "system",
+                content: DeepSeekPrompts.documentSystem(for: request.caseContext.caseType)
+            ),
             DeepSeekMessage(role: "user", content: try DeepSeekPrompts.document(request: request))
         ])
         return try decode(content)

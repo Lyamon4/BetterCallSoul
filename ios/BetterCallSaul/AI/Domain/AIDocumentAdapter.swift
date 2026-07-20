@@ -12,15 +12,43 @@ struct AIDocumentAdapter {
             ? recipient!
             : legalCase.counterparty.isEmpty ? "[укажите получателя]" : legalCase.counterparty
         let factLines = numbered(sections.facts)
+        let legalGroundLines = numbered(sections.legalGrounds)
         let demandLines = numbered(sections.demands)
+        let responseDeadline = sections.responseDays.map {
+            "Прошу рассмотреть изложенные требования и удовлетворить их добровольно. В случае несогласия прошу предоставить мотивированный письменный ответ в течение \($0) календарных дней со дня получения настоящего обращения."
+        } ?? "[требуется уточнить применимый срок ответа]"
+        let nonComplianceLines = numbered(sections.nonComplianceActions)
+        let attachmentDescription = sections.attachmentDescription
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         let body = """
         Фактические обстоятельства:
         \(factLines)
 
-        Требования:
+        Правовые основания:
+        \(legalGroundLines)
+
+        На основании изложенного требую:
         \(demandLines)
+
+        Срок исполнения и ответа:
+        \(responseDeadline)
+
+        В случае отказа или отсутствия ответа:
+        \(nonComplianceLines)
+
+        Приложения:
+        1. \(attachmentDescription.isEmpty ? "[подтверждающие материалы требуют уточнения]" : attachmentDescription)
         """
-        let unresolved = sections.unresolvedIssues
+        var unresolved = sections.unresolvedIssues
+        if sections.legalGrounds.isEmpty {
+            unresolved.append("Уточнить применимые правовые основания")
+        }
+        if sections.responseDays == nil {
+            unresolved.append("Уточнить применимый срок ответа")
+        }
+        if sections.nonComplianceActions.isEmpty {
+            unresolved.append("Уточнить дальнейшие действия при отказе или отсутствии ответа")
+        }
         let requiresReview = resolvedRecipient == "[укажите получателя]"
             || !unresolved.isEmpty
             || legalCase.extractedFields.contains(where: \.requiresReview)

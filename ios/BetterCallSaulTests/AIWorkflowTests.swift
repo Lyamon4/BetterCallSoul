@@ -340,8 +340,10 @@ final class AIWorkflowTests: XCTestCase {
         recipient: "MegaPlus",
         subject: "Требование о возврате",
         facts: ["Списано 24 900 ₸"],
+        legalGrounds: ["Пункты 1 и 2 статьи 42-4 Закона Республики Казахстан «О защите прав потребителей»"],
         demands: ["Вернуть денежные средства"],
-        responseDays: nil,
+        responseDays: 10,
+        nonComplianceActions: ["Обратиться в уполномоченный орган"],
         attachmentDescription: "Копия чека",
         unresolvedIssues: []
     )
