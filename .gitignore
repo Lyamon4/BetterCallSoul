@@ -5,6 +5,7 @@
 ios/BetterCallSaul.xcodeproj/
 ios/.build/
 ios/.derivedData/
+ios/Config/Secrets.xcconfig
 DerivedData/
 *.xcuserstate
 xcuserdata/
