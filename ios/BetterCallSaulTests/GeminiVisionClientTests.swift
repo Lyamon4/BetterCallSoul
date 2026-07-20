@@ -141,6 +141,41 @@ final class GeminiVisionClientTests: XCTestCase {
         XCTAssertTrue(result.rawText.contains("14 850 ₸"))
     }
 
+    func testThoughtStepWithoutContentDoesNotInvalidateCompletedResponse() async throws {
+        let analysis = #"{"documentKind":"receipt","rawText":"MEGAPLUS","counterparty":"MegaPlus","amount":24900,"currency":"KZT","transactionDate":"2026-07-17","evidenceSummary":"Списание","importantDetails":[],"warnings":[],"confidence":{}}"#
+        let response = try JSONSerialization.data(withJSONObject: [
+            "status": "completed",
+            "steps": [
+                ["type": "thought", "signature": "encrypted-thought"],
+                [
+                    "type": "model_output",
+                    "content": [["type": "text", "text": analysis]]
+                ]
+            ]
+        ])
+        let transport = GeminiRecordingTransport(responseData: response)
+        let client = GeminiVisionClient(
+            apiKey: "test-key",
+            model: "gemini-2.5-flash",
+            transport: transport
+        )
+        let payload = EvidencePayload(
+            fileName: "receipt.jpg",
+            mimeType: "image/jpeg",
+            data: Data([1, 2, 3]),
+            previewImage: Self.pixelImage()
+        )
+
+        let result = try await client.analyze(
+            payload: payload,
+            caseType: .charge,
+            narrative: "Верните списание"
+        )
+
+        XCTAssertEqual(result.counterparty, "MegaPlus")
+        XCTAssertEqual(result.amount, Decimal(24_900))
+    }
+
     func testAuthenticationStatusMapsToGeminiError() async throws {
         let transport = GeminiRecordingTransport(responseData: Data(), statusCode: 401)
         let client = GeminiVisionClient(apiKey: "bad-key", model: "gemini-2.5-flash", transport: transport)

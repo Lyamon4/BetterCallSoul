@@ -70,6 +70,20 @@ struct GeminiInteractionResponse: Decodable {
 struct GeminiInteractionStep: Decodable {
     let type: String
     let content: [GeminiInteractionContent]
+
+    private enum CodingKeys: String, CodingKey {
+        case type
+        case content
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        type = try container.decode(String.self, forKey: .type)
+        content = try container.decodeIfPresent(
+            [GeminiInteractionContent].self,
+            forKey: .content
+        ) ?? []
+    }
 }
 
 struct GeminiInteractionContent: Decodable {
