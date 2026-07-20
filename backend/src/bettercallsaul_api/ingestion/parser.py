@@ -12,7 +12,7 @@ from bettercallsaul_api.ingestion.models import (
 )
 
 
-PARSER_VERSION = "legal-html-v1"
+PARSER_VERSION = "legal-html-v2"
 ARTICLE_PATTERN = re.compile(r"^Статья\s+([0-9]+(?:-[0-9]+)*)\.\s*(.*)$", re.I)
 NUMBERED_PARAGRAPH_PATTERN = re.compile(r"^([0-9]+(?:-[0-9]+)*)\.\s+(.+)$")
 
@@ -48,11 +48,14 @@ class LegalSourceParser:
             f"{provision.heading}\n" + "\n".join(provision.paragraphs)
             for provision in provisions
         )
+        normalized_checksum = hashlib.sha256(
+            normalized_text.encode("utf-8")
+        ).hexdigest()
         return ParsedRevision(
             source_code=source.source_code,
-            revision_code=f"sha256:{document.content_checksum[:16]}",
+            revision_code=f"sha256:{normalized_checksum[:16]}",
             effective_from=source.adopted_on,
-            content_checksum=document.content_checksum,
+            content_checksum=normalized_checksum,
             parser_version=PARSER_VERSION,
             normalized_text=normalized_text,
             provisions=tuple(provisions),

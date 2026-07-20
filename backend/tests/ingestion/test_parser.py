@@ -1,3 +1,4 @@
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -37,7 +38,11 @@ def test_adilet_parser_extracts_deterministic_articles_and_hierarchy() -> None:
         fetched("consumer_protection_law", "adilet_consumer_excerpt.html"),
     )
 
-    assert revision.revision_code == "sha256:aaaaaaaaaaaaaaaa"
+    expected_checksum = hashlib.sha256(
+        revision.normalized_text.encode("utf-8")
+    ).hexdigest()
+    assert revision.content_checksum == expected_checksum
+    assert revision.revision_code == f"sha256:{expected_checksum[:16]}"
     assert [item.provision_code for item in revision.provisions] == [
         "article:1",
         "article:2-1",
@@ -52,6 +57,27 @@ def test_adilet_parser_extracts_deterministic_articles_and_hierarchy() -> None:
     )
     assert "Сноска" not in revision.normalized_text
     assert "Поиск" not in revision.normalized_text
+
+
+def test_parser_ignores_dynamic_html_outside_normalized_legal_text() -> None:
+    definition = source("consumer_protection_law")
+    original = fetched("consumer_protection_law", "adilet_consumer_excerpt.html")
+    changed_shell = original.model_copy(
+        update={
+            "body": original.body.replace(
+                "<nav>",
+                '<script nonce="new-request-id">analytics()</script><nav>',
+            ),
+            "content_checksum": "b" * 64,
+        }
+    )
+
+    first = LegalSourceParser().parse(definition, original)
+    second = LegalSourceParser().parse(definition, changed_shell)
+
+    assert first.normalized_text == second.normalized_text
+    assert first.content_checksum == second.content_checksum
+    assert first.revision_code == second.revision_code
 
 
 def test_adilet_rules_parser_uses_numbered_paragraphs_as_provisions() -> None:
