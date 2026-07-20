@@ -8,13 +8,27 @@ struct EvidenceView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selectedPhoto: PhotosPickerItem?
-    @State private var isFileImporterPresented = false
+    @State private var pickerPresentation = EvidencePickerPresentation()
     @State private var isProcessing = false
     @State private var errorMessage: String?
     @State private var isVisible = false
 
     private var presentation: CaseTypePresentation {
         workflow.currentCase.type.presentation
+    }
+
+    private var photoPickerPresented: Binding<Bool> {
+        Binding(
+            get: { pickerPresentation.isPhotoPickerPresented },
+            set: { pickerPresentation.setPhotoPickerPresented($0) }
+        )
+    }
+
+    private var fileImporterPresented: Binding<Bool> {
+        Binding(
+            get: { pickerPresentation.isFileImporterPresented },
+            set: { pickerPresentation.setFileImporterPresented($0) }
+        )
     }
 
     var body: some View {
@@ -75,8 +89,13 @@ struct EvidenceView: View {
         }
         .background(BCSColor.canvas.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
+        .photosPicker(
+            isPresented: photoPickerPresented,
+            selection: $selectedPhoto,
+            matching: .images
+        )
         .fileImporter(
-            isPresented: $isFileImporterPresented,
+            isPresented: fileImporterPresented,
             allowedContentTypes: [.image, .pdf]
         ) { result in
             guard case let .success(url) = result else {
@@ -169,11 +188,13 @@ struct EvidenceView: View {
 
     private var uploadArea: some View {
         Menu {
-            PhotosPicker(selection: $selectedPhoto, matching: .images) {
+            Button {
+                pickerPresentation.presentPhotoPicker()
+            } label: {
                 Label("Выбрать фото", systemImage: "photo")
             }
             Button {
-                isFileImporterPresented = true
+                pickerPresentation.presentFileImporter()
             } label: {
                 Label("Выбрать файл или PDF", systemImage: "folder")
             }
