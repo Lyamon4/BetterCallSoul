@@ -13,7 +13,15 @@ class SupabaseGatewayError(RuntimeError):
 
 
 class SupabaseGateway:
-    allowed_service_rpcs = frozenset({"search_legal_chunks"})
+    allowed_service_rpcs = frozenset(
+        {
+            "search_legal_chunks",
+            "start_legal_ingestion",
+            "append_legal_ingestion_batch",
+            "finalize_legal_ingestion",
+            "fail_legal_ingestion",
+        }
+    )
 
     def __init__(self, settings: Settings, client: httpx.AsyncClient) -> None:
         self.settings = settings
@@ -41,7 +49,7 @@ class SupabaseGateway:
         self,
         name: str,
         payload: dict[str, Any],
-    ) -> list[dict[str, Any]]:
+    ) -> JsonResponse:
         if name not in self.allowed_service_rpcs:
             raise ValueError("Service RPC is not allowed.")
 
@@ -56,7 +64,7 @@ class SupabaseGateway:
             },
             json=payload,
         )
-        if not isinstance(response, list) or not all(
+        if isinstance(response, list) and not all(
             isinstance(item, dict) for item in response
         ):
             raise SupabaseGatewayError("Supabase request failed.")

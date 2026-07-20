@@ -74,6 +74,33 @@ async def test_service_rpc_uses_secret_only_for_allowed_rpc() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "rpc_name",
+    [
+        "start_legal_ingestion",
+        "append_legal_ingestion_batch",
+        "finalize_legal_ingestion",
+        "fail_legal_ingestion",
+    ],
+)
+async def test_ingestion_service_rpcs_are_explicitly_allowed(rpc_name: str) -> None:
+    captured: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return httpx.Response(200, json={"status": "ok"})
+
+    gateway, client = make_gateway(httpx.MockTransport(handler))
+    try:
+        result = await gateway.service_rpc(rpc_name, {"safe": "payload"})
+    finally:
+        await client.aclose()
+
+    assert result == {"status": "ok"}
+    assert captured[0].url.path.endswith(f"/rest/v1/rpc/{rpc_name}")
+
+
+@pytest.mark.asyncio
 async def test_service_rpc_rejects_any_other_function_name() -> None:
     gateway, client = make_gateway(
         httpx.MockTransport(lambda request: httpx.Response(200, json=[]))
