@@ -1,6 +1,6 @@
 from datetime import date
 from enum import StrEnum
-from typing import Literal
+from typing import Any, Literal
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -126,3 +126,23 @@ class ParsedRevision(BaseModel):
     parser_version: str
     normalized_text: str = Field(min_length=1)
     provisions: tuple[ParsedProvision, ...] = Field(min_length=1)
+
+
+class LegalChunk(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    stable_id: str = Field(min_length=5)
+    source_code: str
+    provision_code: str
+    sequence_no: int = Field(ge=0)
+    content: str = Field(min_length=1)
+    context_heading: str = Field(min_length=3)
+    token_count: int = Field(gt=0)
+    content_checksum: str = Field(pattern=r"^[a-f0-9]{64}$")
+    metadata: dict[str, Any]
+
+
+class EmbeddedChunk(LegalChunk):
+    embedding: tuple[float, ...] = Field(min_length=1)
+    embedding_model: str = Field(min_length=3)
+    embedding_version: str = Field(min_length=3)

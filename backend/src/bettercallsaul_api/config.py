@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_publishable_key: str = ""
     supabase_secret_key: str = ""
+    gemini_api_key: str = ""
+    gemini_embedding_model: str = "gemini-embedding-2"
+    gemini_embedding_dimensions: int = 768
 
     def require_supabase(self) -> None:
         missing = [
@@ -30,6 +33,12 @@ class Settings(BaseSettings):
     def require_supabase_secret(self) -> None:
         if not self.supabase_secret_key.strip():
             raise RuntimeError("Missing configuration: SUPABASE_SECRET_KEY")
+
+    def require_gemini_embeddings(self) -> None:
+        if not self.gemini_api_key.strip():
+            raise RuntimeError("Missing configuration: GEMINI_API_KEY")
+        if self.gemini_embedding_dimensions != 768:
+            raise RuntimeError("Gemini embedding dimensions must be 768.")
 
 
 @lru_cache
