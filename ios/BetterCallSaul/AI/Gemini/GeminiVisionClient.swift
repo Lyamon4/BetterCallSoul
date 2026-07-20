@@ -68,7 +68,7 @@ struct GeminiVisionClient: EvidenceAnalyzing {
                     .text else {
                 throw AIProviderError.invalidResponse(.gemini)
             }
-            return try JSONDecoder().decode(EvidenceAnalysis.self, from: Data(text.utf8))
+            return try GeminiEvidenceResponseDecoder.decode(text, caseType: caseType)
         } catch let error as AIProviderError {
             throw error
         } catch {
@@ -78,23 +78,13 @@ struct GeminiVisionClient: EvidenceAnalyzing {
 
     private static let evidenceSchema: GeminiJSONValue = {
         let string = GeminiJSONValue.object(["type": .string("string")])
-        let nullableString = GeminiJSONValue.object([
-            "type": .array([.string("string"), .string("null")])
-        ])
-        let nullableNumber = GeminiJSONValue.object([
-            "type": .array([.string("number"), .string("null")])
-        ])
         let stringArray = GeminiJSONValue.object([
             "type": .string("array"),
             "items": string
         ])
-        let confidence = GeminiJSONValue.object([
-            "type": .string("object"),
-            "additionalProperties": .object(["type": .string("number")])
-        ])
         let required = [
             "documentKind", "rawText", "counterparty", "amount", "currency",
-            "transactionDate", "evidenceSummary", "importantDetails", "warnings", "confidence"
+            "transactionDate", "evidenceSummary", "importantDetails", "warnings"
         ].map(GeminiJSONValue.string)
 
         return .object([
@@ -103,14 +93,13 @@ struct GeminiVisionClient: EvidenceAnalyzing {
             "properties": .object([
                 "documentKind": string,
                 "rawText": string,
-                "counterparty": nullableString,
-                "amount": nullableNumber,
-                "currency": nullableString,
-                "transactionDate": nullableString,
+                "counterparty": string,
+                "amount": string,
+                "currency": string,
+                "transactionDate": string,
                 "evidenceSummary": string,
                 "importantDetails": stringArray,
-                "warnings": stringArray,
-                "confidence": confidence
+                "warnings": stringArray
             ]),
             "required": .array(required)
         ])
