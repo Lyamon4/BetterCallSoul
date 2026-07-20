@@ -13,6 +13,12 @@ class EmbeddingProviderError(RuntimeError):
     pass
 
 
+class EmbeddingQuotaExceeded(EmbeddingProviderError):
+    def __init__(self, retry_after_seconds: float | None = None) -> None:
+        super().__init__("Gemini embedding quota is exhausted.")
+        self.retry_after_seconds = retry_after_seconds
+
+
 Sleep = Callable[[float], Awaitable[None]]
 
 
@@ -121,6 +127,8 @@ class GeminiEmbeddingClient:
                 retry_delay = self._provider_retry_delay(response)
                 if await self._retry(attempt, retry_delay):
                     continue
+                if response.status_code == 429:
+                    raise EmbeddingQuotaExceeded(retry_delay)
                 raise EmbeddingProviderError("Gemini embedding failed.")
             if response.status_code != 200:
                 raise EmbeddingProviderError("Gemini embedding failed.")

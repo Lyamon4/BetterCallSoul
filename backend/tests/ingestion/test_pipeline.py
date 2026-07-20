@@ -3,6 +3,7 @@ from typing import Any
 import pytest
 
 from bettercallsaul_api.ingestion.chunker import LegalHierarchyChunker
+from bettercallsaul_api.ingestion.embeddings import EmbeddingQuotaExceeded
 from bettercallsaul_api.ingestion.models import (
     EmbeddedChunk,
     FetchedDocument,
@@ -10,6 +11,7 @@ from bettercallsaul_api.ingestion.models import (
     ParsedRevision,
 )
 from bettercallsaul_api.ingestion.pipeline import (
+    IngestionPausedError,
     IngestionPipelineError,
     LegalIngestionPipeline,
     preview_source,
@@ -104,9 +106,11 @@ class Gateway:
         self,
         *,
         start_status: str = "staged",
+        completed_provision_codes: tuple[str, ...] = (),
         fail_on: str | None = None,
     ) -> None:
         self.start_status = start_status
+        self.completed_provision_codes = completed_provision_codes
         self.fail_on = fail_on
         self.calls: list[tuple[str, dict[str, Any]]] = []
 
@@ -120,6 +124,9 @@ class Gateway:
                 "source_id": 10,
                 "revision_id": 20,
                 "run_id": 30,
+                "completed_provision_codes": list(
+                    self.completed_provision_codes
+                ),
             }
         if name == "finalize_legal_ingestion":
             return {
@@ -130,6 +137,8 @@ class Gateway:
             }
         if name == "fail_legal_ingestion":
             return {"status": "failed", "revision_id": 20}
+        if name == "pause_legal_ingestion":
+            return {"status": "paused", "revision_id": 20}
         return {"status": "staged", "revision_id": 20}
 
 
@@ -186,6 +195,30 @@ async def test_pipeline_skips_embedding_when_database_revision_is_unchanged() ->
 
 
 @pytest.mark.asyncio
+async def test_pipeline_resumes_after_completed_provisions() -> None:
+    gateway = Gateway(
+        start_status="resuming",
+        completed_provision_codes=("article:1", "article:2"),
+    )
+    embedder = Embedder()
+
+    result = await make_pipeline(embedder, gateway).ingest(source(), activate=True)
+
+    assert result.status == "active"
+    assert embedder.calls == 1
+    append_calls = [
+        payload
+        for name, payload in gateway.calls
+        if name == "append_legal_ingestion_batch"
+    ]
+    assert [
+        provision["provision_code"]
+        for provision in append_calls[0]["p_provisions"]
+    ] == ["article:3"]
+    assert gateway.calls[-1][0] == "finalize_legal_ingestion"
+
+
+@pytest.mark.asyncio
 async def test_pipeline_can_leave_revision_staged_for_manual_review() -> None:
     gateway = Gateway()
 
@@ -221,6 +254,53 @@ async def test_pipeline_marks_staged_revision_failed_after_any_downstream_error(
     assert fail_payload["p_revision_id"] == 20
     assert fail_payload["p_validation_errors"] == [
         {"code": "ingestion_stage_failed"}
+    ]
+
+
+@pytest.mark.asyncio
+async def test_pipeline_pauses_quota_exhaustion_without_rejecting_revision() -> None:
+    gateway = Gateway()
+    quota_error = EmbeddingQuotaExceeded(retry_after_seconds=3600)
+
+    with pytest.raises(IngestionPausedError, match="Legal ingestion paused"):
+        await make_pipeline(Embedder(quota_error), gateway).ingest(
+            source(), activate=True
+        )
+
+    names = [name for name, _ in gateway.calls]
+    assert names == ["start_legal_ingestion", "pause_legal_ingestion"]
+    pause_payload = gateway.calls[-1][1]
+    assert pause_payload == {
+        "p_revision_id": 20,
+        "p_validation_errors": [{"code": "embedding_quota_exhausted"}],
+    }
+
+
+@pytest.mark.asyncio
+async def test_pipeline_keeps_uploaded_batches_when_later_batch_hits_quota() -> None:
+    class QuotaAfterFirstBatch(Embedder):
+        async def embed_documents(self, chunks):
+            if self.calls == 1:
+                raise EmbeddingQuotaExceeded(retry_after_seconds=3600)
+            return await super().embed_documents(chunks)
+
+    gateway = Gateway()
+
+    with pytest.raises(IngestionPausedError):
+        await make_pipeline(QuotaAfterFirstBatch(), gateway).ingest(
+            source(), activate=True
+        )
+
+    names = [name for name, _ in gateway.calls]
+    assert names == [
+        "start_legal_ingestion",
+        "append_legal_ingestion_batch",
+        "pause_legal_ingestion",
+    ]
+    completed_batch = gateway.calls[1][1]["p_provisions"]
+    assert [item["provision_code"] for item in completed_batch] == [
+        "article:1",
+        "article:2",
     ]
 
 

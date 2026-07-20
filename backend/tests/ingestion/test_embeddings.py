@@ -5,6 +5,7 @@ import pytest
 
 from bettercallsaul_api.config import Settings
 from bettercallsaul_api.ingestion.embeddings import (
+    EmbeddingQuotaExceeded,
     EmbeddingProviderError,
     GeminiEmbeddingClient,
 )
@@ -205,6 +206,37 @@ async def test_embedding_client_honors_provider_retry_delay_for_quota_window() -
     assert attempts == 2
     assert sleeps == [17.25]
     assert len(embedded[0].embedding) == 768
+
+
+@pytest.mark.asyncio
+async def test_embedding_client_reports_exhausted_quota_separately() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            429,
+            json={
+                "error": {
+                    "status": "RESOURCE_EXHAUSTED",
+                    "details": [
+                        {
+                            "@type": "type.googleapis.com/google.rpc.RetryInfo",
+                            "retryDelay": "23s",
+                        }
+                    ],
+                }
+            },
+            request=request,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(EmbeddingQuotaExceeded) as caught:
+            await GeminiEmbeddingClient(
+                settings(),
+                client,
+                retry_delays=(),
+            ).embed_documents((legal_chunk(0, "Текст."),))
+
+    assert caught.value.retry_after_seconds == 23
+    assert str(caught.value) == "Gemini embedding quota is exhausted."
 
 
 @pytest.mark.asyncio

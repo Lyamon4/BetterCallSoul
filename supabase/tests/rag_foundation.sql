@@ -56,6 +56,7 @@ begin
     to_regprocedure('public.start_legal_ingestion(jsonb,jsonb)'),
     to_regprocedure('public.append_legal_ingestion_batch(bigint,jsonb)'),
     to_regprocedure('public.finalize_legal_ingestion(bigint,integer,integer)'),
+    to_regprocedure('public.pause_legal_ingestion(bigint,jsonb)'),
     to_regprocedure('public.fail_legal_ingestion(bigint,jsonb)')
   ] loop
     assert ingestion_function is not null,
@@ -81,6 +82,7 @@ do $$
 declare
   start_result jsonb;
   unchanged_result jsonb;
+  paused_result jsonb;
   failed_result jsonb;
   revision_id bigint;
 begin
@@ -176,6 +178,68 @@ begin
   assert unchanged_result->>'status' = 'unchanged',
     'matching active checksum must skip ingestion';
 
+  paused_result := public.start_legal_ingestion(
+    jsonb_build_object(
+      'source_code', 'test_ingestion_source',
+      'title', 'Test official source',
+      'authority', 'Republic of Kazakhstan',
+      'official_url', 'https://adilet.zan.kz/rus/docs/TEST_INGESTION',
+      'jurisdiction', 'KZ',
+      'language', 'ru',
+      'document_type', 'law'
+    ),
+    jsonb_build_object(
+      'revision_code', 'sha256:test-revision-2',
+      'effective_from', '2026-07-20',
+      'content_checksum', repeat('c', 64),
+      'parser_version', 'test-parser-v1',
+      'normalized_text', 'Статья 1. Новая версия.',
+      'embedding_model', 'gemini-embedding-2'
+    )
+  );
+  perform public.append_legal_ingestion_batch(
+    (paused_result->>'revision_id')::bigint,
+    jsonb_build_array(
+      jsonb_build_object(
+        'provision_code', 'article:2',
+        'heading', 'Статья 2',
+        'hierarchy_path', 'Глава 1',
+        'normalized_text', 'Новая версия правила.',
+        'source_anchor', '#z2',
+        'categories', jsonb_build_array('product'),
+        'sectors', jsonb_build_array('consumer'),
+        'content_checksum', repeat('d', 64),
+        'chunks', jsonb_build_array(
+          jsonb_build_object(
+            'sequence_no', 0,
+            'content', 'Новая версия правила.',
+            'context_heading', 'Test official source — Статья 2',
+            'token_count', 5,
+            'embedding', to_jsonb(array_fill(0.02::double precision, array[768])),
+            'embedding_model', 'gemini-embedding-2',
+            'embedding_version', 'gemini-embedding-2',
+            'metadata', '{}'::jsonb
+          )
+        )
+      )
+    )
+  );
+  perform public.pause_legal_ingestion(
+    (paused_result->>'revision_id')::bigint,
+    jsonb_build_array(jsonb_build_object('code', 'embedding_quota_exhausted'))
+  );
+  assert (
+    select status = 'staged'
+    from rag.legal_revisions
+    where id = (paused_result->>'revision_id')::bigint
+  ), 'paused ingestion must keep the revision staged';
+  assert (
+    select count(*) = 1
+    from rag.ingestion_runs run
+    where run.revision_id = (paused_result->>'revision_id')::bigint
+      and run.status = 'paused'
+  ), 'paused ingestion must close the current run';
+
   failed_result := public.start_legal_ingestion(
     jsonb_build_object(
       'source_code', 'test_ingestion_source',
@@ -195,6 +259,10 @@ begin
       'embedding_model', 'gemini-embedding-2'
     )
   );
+  assert failed_result->>'status' = 'resuming',
+    'matching staged revision must resume';
+  assert failed_result->'completed_provision_codes' = jsonb_build_array('article:2'),
+    'resume must return completed provisions';
   perform public.fail_legal_ingestion(
     (failed_result->>'revision_id')::bigint,
     jsonb_build_array('test failure')

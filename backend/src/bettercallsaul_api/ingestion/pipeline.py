@@ -2,11 +2,13 @@ from collections.abc import Sequence
 from typing import Any, Protocol
 
 from bettercallsaul_api.ingestion.chunker import LegalHierarchyChunker
+from bettercallsaul_api.ingestion.embeddings import EmbeddingQuotaExceeded
 from bettercallsaul_api.ingestion.models import (
     EmbeddedChunk,
     FetchedDocument,
     IngestionResult,
     LegalChunk,
+    ParsedProvision,
     ParsedRevision,
     SourceDefinition,
 )
@@ -40,6 +42,10 @@ class ServiceGateway(Protocol):
 
 
 class IngestionPipelineError(RuntimeError):
+    pass
+
+
+class IngestionPausedError(IngestionPipelineError):
     pass
 
 
@@ -129,19 +135,46 @@ class LegalIngestionPipeline:
             chunks = self.chunker.chunk_revision(source, revision)
             if not chunks:
                 raise ValueError("revision produced no chunks")
-            embedded_chunks = await self.embedder.embed_documents(chunks)
-            provision_payloads = self._provision_payloads(
-                revision,
-                embedded_chunks,
+            completed_codes = self._completed_provision_codes(
+                start_response,
+                revision.provisions,
             )
-            for offset in range(0, len(provision_payloads), self.provision_batch_size):
+            chunks_by_provision: dict[str, list[LegalChunk]] = {}
+            for chunk in chunks:
+                chunks_by_provision.setdefault(chunk.provision_code, []).append(chunk)
+            remaining_provisions = tuple(
+                provision
+                for provision in revision.provisions
+                if provision.provision_code not in completed_codes
+            )
+            for offset in range(
+                0,
+                len(remaining_provisions),
+                self.provision_batch_size,
+            ):
+                provision_batch = remaining_provisions[
+                    offset : offset + self.provision_batch_size
+                ]
+                chunk_batch = tuple(
+                    chunk
+                    for provision in provision_batch
+                    for chunk in sorted(
+                        chunks_by_provision.get(provision.provision_code, []),
+                        key=lambda item: item.sequence_no,
+                    )
+                )
+                if not chunk_batch:
+                    raise ValueError("provision batch produced no chunks")
+                embedded_chunks = await self.embedder.embed_documents(chunk_batch)
+                provision_payloads = self._provision_payloads(
+                    provision_batch,
+                    embedded_chunks,
+                )
                 await self.gateway.service_rpc(
                     "append_legal_ingestion_batch",
                     {
                         "p_revision_id": revision_id,
-                        "p_provisions": provision_payloads[
-                            offset : offset + self.provision_batch_size
-                        ],
+                        "p_provisions": provision_payloads,
                     },
                 )
 
@@ -151,7 +184,7 @@ class LegalIngestionPipeline:
                     source_code=source.source_code,
                     revision_id=revision_id,
                     provision_count=len(revision.provisions),
-                    chunk_count=len(embedded_chunks),
+                    chunk_count=len(chunks),
                 )
 
             finalize_response = await self.gateway.service_rpc(
@@ -159,7 +192,7 @@ class LegalIngestionPipeline:
                 {
                     "p_revision_id": revision_id,
                     "p_expected_provision_count": len(revision.provisions),
-                    "p_expected_chunk_count": len(embedded_chunks),
+                    "p_expected_chunk_count": len(chunks),
                 },
             )
             if not isinstance(finalize_response, dict) or (
@@ -171,8 +204,23 @@ class LegalIngestionPipeline:
                 source_code=source.source_code,
                 revision_id=revision_id,
                 provision_count=len(revision.provisions),
-                chunk_count=len(embedded_chunks),
+                chunk_count=len(chunks),
             )
+        except EmbeddingQuotaExceeded as error:
+            if revision_id is not None:
+                try:
+                    await self.gateway.service_rpc(
+                        "pause_legal_ingestion",
+                        {
+                            "p_revision_id": revision_id,
+                            "p_validation_errors": [
+                                {"code": "embedding_quota_exhausted"}
+                            ],
+                        },
+                    )
+                except Exception:
+                    pass
+            raise IngestionPausedError("Legal ingestion paused.") from error
         except Exception as error:
             if revision_id is not None:
                 try:
@@ -220,7 +268,7 @@ class LegalIngestionPipeline:
 
     def _provision_payloads(
         self,
-        revision: ParsedRevision,
+        provisions: Sequence[ParsedProvision],
         chunks: Sequence[EmbeddedChunk],
     ) -> list[dict[str, Any]]:
         chunks_by_provision: dict[str, list[EmbeddedChunk]] = {}
@@ -228,7 +276,7 @@ class LegalIngestionPipeline:
             chunks_by_provision.setdefault(chunk.provision_code, []).append(chunk)
 
         payloads: list[dict[str, Any]] = []
-        for provision in revision.provisions:
+        for provision in provisions:
             provision_chunks = sorted(
                 chunks_by_provision.get(provision.provision_code, []),
                 key=lambda chunk: chunk.sequence_no,
@@ -263,6 +311,22 @@ class LegalIngestionPipeline:
                 }
             )
         return payloads
+
+    @staticmethod
+    def _completed_provision_codes(
+        start_response: dict[str, Any],
+        provisions: Sequence[ParsedProvision],
+    ) -> set[str]:
+        raw_codes = start_response.get("completed_provision_codes", [])
+        if not isinstance(raw_codes, list) or not all(
+            isinstance(code, str) for code in raw_codes
+        ):
+            raise ValueError("invalid completed provision codes")
+        completed_codes = set(raw_codes)
+        available_codes = {provision.provision_code for provision in provisions}
+        if not completed_codes.issubset(available_codes):
+            raise ValueError("completed provision does not exist in revision")
+        return completed_codes
 
     @staticmethod
     def _optional_int(value: object) -> int | None:

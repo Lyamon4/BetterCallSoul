@@ -19,6 +19,7 @@ class SupabaseGateway:
             "start_legal_ingestion",
             "append_legal_ingestion_batch",
             "finalize_legal_ingestion",
+            "pause_legal_ingestion",
             "fail_legal_ingestion",
         }
     )

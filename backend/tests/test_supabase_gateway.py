@@ -80,6 +80,7 @@ async def test_service_rpc_uses_secret_only_for_allowed_rpc() -> None:
         "start_legal_ingestion",
         "append_legal_ingestion_batch",
         "finalize_legal_ingestion",
+        "pause_legal_ingestion",
         "fail_legal_ingestion",
     ],
 )
