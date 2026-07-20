@@ -1,5 +1,6 @@
 from datetime import date
 from enum import StrEnum
+from typing import Literal
 from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -76,3 +77,52 @@ class SourceRegistry(BaseModel):
             raise ValueError("official_url values must be unique")
         return self
 
+
+class FetchedDocument(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    status: Literal["fetched", "unchanged"]
+    requested_url: str
+    final_url: str
+    body: str | None
+    content_checksum: str | None
+    etag: str | None
+    last_modified: str | None
+
+    @model_validator(mode="after")
+    def validate_fetch_state(self) -> "FetchedDocument":
+        if self.status == "fetched" and (
+            self.body is None or self.content_checksum is None
+        ):
+            raise ValueError("fetched documents require body and checksum")
+        if self.status == "unchanged" and (
+            self.body is not None or self.content_checksum is not None
+        ):
+            raise ValueError("unchanged documents cannot contain a body")
+        return self
+
+
+class ParsedProvision(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    provision_code: str = Field(min_length=3)
+    heading: str = Field(min_length=3)
+    hierarchy_path: str = Field(min_length=1)
+    paragraphs: tuple[str, ...] = Field(min_length=1)
+    source_anchor: str | None = None
+    categories: tuple[CaseCategory, ...] = Field(min_length=1)
+    sectors: tuple[str, ...] = ()
+    content_checksum: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+
+class ParsedRevision(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    source_code: str
+    revision_code: str
+    effective_from: date | None
+    effective_to: date | None = None
+    content_checksum: str = Field(pattern=r"^[a-f0-9]{64}$")
+    parser_version: str
+    normalized_text: str = Field(min_length=1)
+    provisions: tuple[ParsedProvision, ...] = Field(min_length=1)
