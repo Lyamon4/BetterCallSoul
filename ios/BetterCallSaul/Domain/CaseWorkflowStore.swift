@@ -87,7 +87,7 @@ final class CaseWorkflowStore {
         if let evidencePayload {
             aiState = .analyzingEvidence
             do {
-                let analysis = try await retryOnce {
+                let analysis = try await retryOnceUnlessTimedOut {
                     try await services.evidenceAnalyzer.analyze(
                         payload: evidencePayload,
                         caseType: currentCase.type,
@@ -104,7 +104,7 @@ final class CaseWorkflowStore {
 
         aiState = .analyzingText
         do {
-            caseAnalysis = try await retryOnce {
+            caseAnalysis = try await retryOnceUnlessTimedOut {
                 try await services.legalTextGenerator.analyzeCase(makeCaseRequest())
             }
             activeProvider = .deepSeek
@@ -137,7 +137,7 @@ final class CaseWorkflowStore {
         aiState = .generatingDocument
 
         do {
-            aiDocumentSections = try await retryOnce {
+            aiDocumentSections = try await retryOnceUnlessTimedOut {
                 try await services.legalTextGenerator.generateDocument(request)
             }
             activeProvider = .deepSeek
@@ -210,9 +210,13 @@ final class CaseWorkflowStore {
         )
     }
 
-    private func retryOnce<T>(_ operation: () async throws -> T) async throws -> T {
+    private func retryOnceUnlessTimedOut<T>(
+        _ operation: () async throws -> T
+    ) async throws -> T {
         do {
             return try await operation()
+        } catch let error as AIProviderError where error == .timedOut {
+            throw error
         } catch {
             return try await operation()
         }

@@ -129,6 +129,71 @@ final class AIWorkflowTests: XCTestCase {
         XCTAssertEqual(legalAttempts, 2)
     }
 
+    func testTextTimeoutFallsBackLocallyWithoutRetry() async throws {
+        let evidence = WorkflowEvidenceStub(.success(Self.evidenceAnalysis))
+        let legal = WorkflowLegalStub(
+            analysis: .failure(.timedOut),
+            document: .success(Self.documentSections)
+        )
+        let local = WorkflowLegalStub(
+            analysis: .success(Self.localAnalysis),
+            document: .success(Self.documentSections)
+        )
+        let store = CaseWorkflowStore(
+            seed: DemoFixtures.activeCase,
+            services: AIServiceContainer(
+                evidenceAnalyzer: evidence,
+                legalTextGenerator: legal,
+                localTextGenerator: local
+            )
+        )
+
+        await store.runAIAnalysis()
+
+        XCTAssertEqual(store.activeProvider, .local)
+        XCTAssertEqual(store.caseAnalysis, Self.localAnalysis)
+        if case .fallback = store.aiState {} else {
+            XCTFail("Expected fallback state")
+        }
+        let legalAttempts = await legal.analysisAttemptCount()
+        let localAttempts = await local.analysisAttemptCount()
+        XCTAssertEqual(legalAttempts, 1)
+        XCTAssertEqual(localAttempts, 1)
+    }
+
+    func testDocumentTimeoutFallsBackLocallyWithoutRetry() async throws {
+        let evidence = WorkflowEvidenceStub(.success(Self.evidenceAnalysis))
+        let legal = WorkflowLegalStub(
+            analysis: .success(Self.caseAnalysis),
+            document: .failure(.timedOut)
+        )
+        let local = WorkflowLegalStub(
+            analysis: .success(Self.localAnalysis),
+            document: .success(Self.documentSections)
+        )
+        let store = CaseWorkflowStore(
+            seed: DemoFixtures.activeCase,
+            services: AIServiceContainer(
+                evidenceAnalyzer: evidence,
+                legalTextGenerator: legal,
+                localTextGenerator: local
+            )
+        )
+        await store.runAIAnalysis()
+
+        await store.generateAIDocument()
+
+        XCTAssertEqual(store.activeProvider, .local)
+        XCTAssertEqual(store.aiDocumentSections, Self.documentSections)
+        if case .fallback = store.aiState {} else {
+            XCTFail("Expected fallback state")
+        }
+        let legalAttempts = await legal.documentAttemptCount()
+        let localAttempts = await local.documentAttemptCount()
+        XCTAssertEqual(legalAttempts, 1)
+        XCTAssertEqual(localAttempts, 1)
+    }
+
     func testDocumentGenerationRetriesAndFallsBackLocally() async throws {
         let evidence = WorkflowEvidenceStub(.success(Self.evidenceAnalysis))
         let legal = WorkflowLegalStub(
