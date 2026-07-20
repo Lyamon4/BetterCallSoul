@@ -27,6 +27,10 @@ class Settings(BaseSettings):
         if missing:
             raise RuntimeError(f"Missing configuration: {', '.join(missing)}")
 
+    def require_supabase_secret(self) -> None:
+        if not self.supabase_secret_key.strip():
+            raise RuntimeError("Missing configuration: SUPABASE_SECRET_KEY")
+
 
 @lru_cache
 def get_settings() -> Settings:
