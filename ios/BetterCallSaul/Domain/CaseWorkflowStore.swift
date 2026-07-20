@@ -81,22 +81,33 @@ final class CaseWorkflowStore {
         answers[questionID] = value
     }
 
+    func analyzeAttachedEvidence() async throws {
+        guard let evidencePayload, evidenceAnalysis == nil else { return }
+        aiState = .analyzingEvidence
+        do {
+            let analysis = try await retryOnceUnlessTimedOut {
+                try await services.evidenceAnalyzer.analyze(
+                    payload: evidencePayload,
+                    caseType: currentCase.type,
+                    narrative: narrative
+                )
+            }
+            evidenceAnalysis = analysis
+            applyEvidenceAnalysis(analysis)
+            activeProvider = .gemini
+            aiState = .idle
+        } catch {
+            aiState = .fallback(error.localizedDescription)
+            throw error
+        }
+    }
+
     func runAIAnalysis() async {
         var evidenceError: Error?
 
-        if let evidencePayload {
-            aiState = .analyzingEvidence
+        if evidencePayload != nil, evidenceAnalysis == nil {
             do {
-                let analysis = try await retryOnceUnlessTimedOut {
-                    try await services.evidenceAnalyzer.analyze(
-                        payload: evidencePayload,
-                        caseType: currentCase.type,
-                        narrative: narrative
-                    )
-                }
-                evidenceAnalysis = analysis
-                applyEvidenceAnalysis(analysis)
-                activeProvider = .gemini
+                try await analyzeAttachedEvidence()
             } catch {
                 evidenceError = error
             }

@@ -32,7 +32,7 @@ final class AIConfigurationTests: XCTestCase {
     func testHostAppBundleContainsProviderConfiguration() throws {
         let configuration = try AIConfiguration.bundled()
 
-        XCTAssertEqual(configuration.geminiModel, "gemini-3.5-flash")
+        XCTAssertEqual(configuration.geminiModel, "gemini-2.5-flash")
         XCTAssertEqual(configuration.deepSeekModel, "deepseek-v4-pro")
         XCTAssertFalse(configuration.geminiAPIKey.isEmpty)
         XCTAssertFalse(configuration.deepSeekAPIKey.isEmpty)
@@ -41,12 +41,12 @@ final class AIConfigurationTests: XCTestCase {
     func testConfigurationReportsBothBundledProviders() throws {
         let configuration = try AIConfiguration(values: [
             "GeminiAPIKey": "gemini-test-key",
-            "GeminiModel": "gemini-3.5-flash",
+            "GeminiModel": "gemini-2.5-flash",
             "DeepSeekAPIKey": "deepseek-test-key",
             "DeepSeekModel": "deepseek-v4-pro"
         ])
 
-        XCTAssertEqual(configuration.geminiModel, "gemini-3.5-flash")
+        XCTAssertEqual(configuration.geminiModel, "gemini-2.5-flash")
         XCTAssertEqual(configuration.deepSeekModel, "deepseek-v4-pro")
         XCTAssertEqual(configuration.geminiAPIKey, "gemini-test-key")
         XCTAssertEqual(configuration.deepSeekAPIKey, "deepseek-test-key")
@@ -61,7 +61,7 @@ final class AIConfigurationTests: XCTestCase {
     func testMissingDeepSeekKeyProducesConfigurationError() {
         XCTAssertThrowsError(try AIConfiguration(values: [
             "GeminiAPIKey": "gemini-test-key",
-            "GeminiModel": "gemini-3.5-flash"
+            "GeminiModel": "gemini-2.5-flash"
         ])) { error in
             XCTAssertEqual(error as? AIProviderError, .missingKey(.deepSeek))
         }

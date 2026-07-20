@@ -52,6 +52,64 @@ private actor WorkflowLegalStub: LegalTextGenerating {
 
 @MainActor
 final class AIWorkflowTests: XCTestCase {
+    func testAnalyzeAttachedEvidenceUsesGeminiAndAppliesEditableFields() async throws {
+        let evidence = WorkflowEvidenceStub(.success(Self.evidenceAnalysis))
+        let legal = WorkflowLegalStub(
+            analysis: .success(Self.caseAnalysis),
+            document: .success(Self.documentSections)
+        )
+        let store = CaseWorkflowStore(
+            seed: DemoFixtures.activeCase,
+            services: AIServiceContainer(
+                evidenceAnalyzer: evidence,
+                legalTextGenerator: legal,
+                localTextGenerator: legal
+            )
+        )
+        store.attachEvidence(Self.importedEvidence())
+
+        try await store.analyzeAttachedEvidence()
+
+        XCTAssertEqual(store.evidenceAnalysis, Self.evidenceAnalysis)
+        XCTAssertEqual(store.currentCase.counterparty, "MegaPlus")
+        XCTAssertEqual(store.currentCase.amount, 24_900)
+        XCTAssertEqual(store.activeProvider, .gemini)
+        let evidenceAttempts = await evidence.attemptCount()
+        let legalAttempts = await legal.analysisAttemptCount()
+        XCTAssertEqual(evidenceAttempts, 1)
+        XCTAssertEqual(legalAttempts, 0)
+    }
+
+    func testRunAIAnalysisReusesExistingEvidenceAnalysis() async throws {
+        let evidence = WorkflowEvidenceStub(.success(Self.evidenceAnalysis))
+        let legal = WorkflowLegalStub(
+            analysis: .success(Self.caseAnalysis),
+            document: .success(Self.documentSections)
+        )
+        let local = WorkflowLegalStub(
+            analysis: .success(Self.localAnalysis),
+            document: .success(Self.documentSections)
+        )
+        let store = CaseWorkflowStore(
+            seed: DemoFixtures.activeCase,
+            services: AIServiceContainer(
+                evidenceAnalyzer: evidence,
+                legalTextGenerator: legal,
+                localTextGenerator: local
+            )
+        )
+        store.attachEvidence(Self.importedEvidence())
+
+        try await store.analyzeAttachedEvidence()
+        await store.runAIAnalysis()
+
+        let evidenceAttempts = await evidence.attemptCount()
+        let legalAttempts = await legal.analysisAttemptCount()
+        XCTAssertEqual(evidenceAttempts, 1)
+        XCTAssertEqual(legalAttempts, 1)
+        XCTAssertEqual(store.aiState, .questions)
+    }
+
     func testVisualAndTextAnalysisUpdateEditableCaseFacts() async throws {
         let evidence = WorkflowEvidenceStub(.success(Self.evidenceAnalysis))
         let legal = WorkflowLegalStub(

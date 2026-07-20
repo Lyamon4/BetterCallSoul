@@ -353,21 +353,7 @@ struct EvidenceView: View {
     }
 
     private func recognize(_ imported: ImportedEvidence) async throws {
-        let parser = ReceiptFieldParser()
         workflow.attachEvidence(imported)
-        workflow.applyExtraction(
-            evidence: imported.item,
-            fields: parser.parse("", caseType: workflow.currentCase.type)
-        )
-
-        do {
-            let text = try await VisionTextRecognizer().recognizeText(in: imported.image)
-            workflow.applyExtraction(
-                evidence: imported.item,
-                fields: parser.parse(text, caseType: workflow.currentCase.type)
-            )
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+        try await workflow.analyzeAttachedEvidence()
     }
 }

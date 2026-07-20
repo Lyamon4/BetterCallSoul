@@ -33,7 +33,7 @@ final class GeminiVisionClientTests: XCTestCase {
         let transport = GeminiRecordingTransport(responseData: try completedResponse())
         let client = GeminiVisionClient(
             apiKey: "test-key",
-            model: "gemini-3.5-flash",
+            model: "gemini-2.5-flash",
             transport: transport
         )
         let payload = EvidencePayload(
@@ -59,6 +59,7 @@ final class GeminiVisionClientTests: XCTestCase {
         let responseFormat = try XCTUnwrap(object["response_format"] as? [String: Any])
 
         XCTAssertEqual(result.amount, Decimal(24_900))
+        XCTAssertEqual(object["model"] as? String, "gemini-2.5-flash")
         XCTAssertTrue(body.contains(payload.data.base64EncodedString()))
         XCTAssertNotNil(responseFormat["schema"])
         XCTAssertEqual(responseFormat["mime_type"] as? String, "application/json")
@@ -69,7 +70,7 @@ final class GeminiVisionClientTests: XCTestCase {
 
     func testPDFUsesDocumentInputType() async throws {
         let transport = GeminiRecordingTransport(responseData: try completedResponse())
-        let client = GeminiVisionClient(apiKey: "key", model: "gemini-3.5-flash", transport: transport)
+        let client = GeminiVisionClient(apiKey: "key", model: "gemini-2.5-flash", transport: transport)
         let payload = EvidencePayload(
             fileName: "bill.pdf",
             mimeType: "application/pdf",
@@ -92,7 +93,7 @@ final class GeminiVisionClientTests: XCTestCase {
 
     func testAuthenticationStatusMapsToGeminiError() async throws {
         let transport = GeminiRecordingTransport(responseData: Data(), statusCode: 401)
-        let client = GeminiVisionClient(apiKey: "bad-key", model: "gemini-3.5-flash", transport: transport)
+        let client = GeminiVisionClient(apiKey: "bad-key", model: "gemini-2.5-flash", transport: transport)
         let payload = EvidencePayload(
             fileName: "receipt.jpg",
             mimeType: "image/jpeg",
