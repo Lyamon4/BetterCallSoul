@@ -146,3 +146,13 @@ class EmbeddedChunk(LegalChunk):
     embedding: tuple[float, ...] = Field(min_length=1)
     embedding_model: str = Field(min_length=3)
     embedding_version: str = Field(min_length=3)
+
+
+class IngestionResult(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+    status: Literal["dry_run", "unchanged", "staged", "active"]
+    source_code: str
+    revision_id: int | None = None
+    provision_count: int = Field(ge=0)
+    chunk_count: int = Field(ge=0)

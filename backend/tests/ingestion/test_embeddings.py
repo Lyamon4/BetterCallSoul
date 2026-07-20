@@ -189,3 +189,27 @@ def test_embedding_client_requires_backend_api_key_and_fixed_dimension() -> None
     )
     with pytest.raises(RuntimeError, match="768"):
         GeminiEmbeddingClient(wrong_dimensions, httpx.AsyncClient())
+
+
+@pytest.mark.asyncio
+async def test_query_embedding_uses_asymmetric_search_prefix() -> None:
+    captured: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.append(request)
+        return httpx.Response(
+            200,
+            json={"embeddings": [{"values": [0.5] * 768}]},
+            request=request,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        vector = await GeminiEmbeddingClient(settings(), client).embed_query(
+            "оспорить списание с карты"
+        )
+
+    payload = json.loads(captured[0].content)
+    assert payload["requests"][0]["content"]["parts"][0]["text"] == (
+        "task: search result | query: оспорить списание с карты"
+    )
+    assert len(vector) == 768

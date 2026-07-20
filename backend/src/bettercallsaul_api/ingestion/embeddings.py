@@ -53,9 +53,28 @@ class GeminiEmbeddingClient:
             )
         return tuple(embedded)
 
+    async def embed_query(self, query: str) -> tuple[float, ...]:
+        normalized_query = " ".join(query.split())
+        if not normalized_query:
+            raise ValueError("query must not be blank")
+        vectors = await self._request_embeddings(
+            (f"task: search result | query: {normalized_query}",)
+        )
+        return vectors[0]
+
     async def _embed_batch(
         self,
         chunks: Sequence[LegalChunk],
+    ) -> tuple[tuple[float, ...], ...]:
+        texts = tuple(
+            f"title: {chunk.context_heading} | text: {chunk.content}"
+            for chunk in chunks
+        )
+        return await self._request_embeddings(texts)
+
+    async def _request_embeddings(
+        self,
+        texts: Sequence[str],
     ) -> tuple[tuple[float, ...], ...]:
         model = self.settings.gemini_embedding_model
         payload = {
@@ -66,15 +85,14 @@ class GeminiEmbeddingClient:
                         "parts": [
                             {
                                 "text": (
-                                    f"title: {chunk.context_heading} | "
-                                    f"text: {chunk.content}"
+                                    text
                                 )
                             }
                         ]
                     },
                     "outputDimensionality": self.settings.gemini_embedding_dimensions,
                 }
-                for chunk in chunks
+                for text in texts
             ]
         }
         url = (
@@ -108,7 +126,7 @@ class GeminiEmbeddingClient:
             try:
                 decoded = response.json()
                 raw_embeddings = decoded["embeddings"]
-                if len(raw_embeddings) != len(chunks):
+                if len(raw_embeddings) != len(texts):
                     raise ValueError("embedding count mismatch")
                 vectors = tuple(
                     self._validate_vector(item["values"])

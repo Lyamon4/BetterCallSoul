@@ -1,0 +1,62 @@
+[
+  {
+    "scenario_id": "charge-unauthorized-card",
+    "category": "charge",
+    "query": "несанкционированное списание с банковской карты без согласия клиента",
+    "expected_source_codes": ["payments_law", "payment_card_rules"]
+  },
+  {
+    "scenario_id": "charge-merchant-refund",
+    "category": "charge",
+    "query": "продавец не вернул ошибочно списанные деньги за покупку",
+    "expected_source_codes": ["consumer_protection_law", "civil_code_special"]
+  },
+  {
+    "scenario_id": "fine-appeal",
+    "category": "fine",
+    "query": "обжалование постановления об административном штрафе",
+    "expected_source_codes": ["administrative_offences_code"]
+  },
+  {
+    "scenario_id": "fine-government-complaint",
+    "category": "fine",
+    "query": "подать жалобу на решение государственного органа через eOtinish",
+    "expected_source_codes": ["administrative_procedure_code", "egov_eotinish_guidance"]
+  },
+  {
+    "scenario_id": "subscription-auto-renewal",
+    "category": "subscription",
+    "query": "автоматическое продление подписки без ясного согласия потребителя",
+    "expected_source_codes": ["consumer_protection_law", "civil_code_special"]
+  },
+  {
+    "scenario_id": "subscription-cancellation",
+    "category": "subscription",
+    "query": "отмена платной услуги и возврат денег после обращения клиента",
+    "expected_source_codes": ["consumer_protection_law", "payments_law"]
+  },
+  {
+    "scenario_id": "product-defect",
+    "category": "product",
+    "query": "возврат товара ненадлежащего качества с существенным недостатком",
+    "expected_source_codes": ["consumer_protection_law", "civil_code_special"]
+  },
+  {
+    "scenario_id": "product-no-receipt",
+    "category": "product",
+    "query": "защита прав покупателя при отсутствии кассового чека",
+    "expected_source_codes": ["consumer_protection_law"]
+  },
+  {
+    "scenario_id": "bill-utility-recalculation",
+    "category": "bill",
+    "query": "требование перерасчета завышенного коммунального счета",
+    "expected_source_codes": ["consumer_protection_law", "civil_code_special"]
+  },
+  {
+    "scenario_id": "bill-service-invoice",
+    "category": "bill",
+    "query": "оспорить неверные начисления в счете за услуги",
+    "expected_source_codes": ["consumer_protection_law", "civil_code_special"]
+  }
+]
