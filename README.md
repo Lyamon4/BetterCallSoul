@@ -1,24 +1,168 @@
 # BetterCallSaul
 
-BetterCallSaul is an iOS legal-workflow assistant for Kazakhstan. The current
-foundation contains the existing SwiftUI client, an authenticated FastAPI
-backend, owner-scoped Supabase case storage, and a protected hybrid-search
-schema plus a backend-only ingestion pipeline for the official legal corpus.
+> Онлайн-адвокат для Казахстана, который превращает проблему пользователя в проверяемые факты, юридическое обращение и готовый PDF.
 
-For a fresh local iOS checkout, create the ignored secrets file before opening
-the Xcode project:
+BetterCallSaul — нативное iOS-приложение для типовых потребительских и административных ситуаций. Пользователь описывает проблему, прикладывает чек, скриншот или PDF, подтверждает распознанные данные и получает структурированную претензию.
 
-```bash
-cp ios/Config/Secrets.local.xcconfig.example ios/Config/Secrets.local.xcconfig
+[Скачать готовый Simulator-билд и посмотреть демо](https://github.com/Lyamon4/BetterCallSoul/releases/latest)
+
+## Что работает
+
+| Возможность | Статус | Что делает |
+| --- | --- | --- |
+| Жалобы и требования | Работает | Формирует официальную претензию компании или организации |
+| Обжалование штрафов | Работает | Собирает обстоятельства и создаёт проект апелляции |
+| Отмена подписок | Работает | Готовит требование об отмене и возврате спорного списания |
+| Возвраты и компенсации | Работает | Обрабатывает некачественный товар, ошибочное списание и нарушение гарантии |
+| Переговоры по счетам | Работает | Создаёт требование о проверке начислений и перерасчёте |
+| Сол — AI-маршрутизатор | Работает | Понимает проблему своими словами и открывает нужный сценарий |
+| Анализ фото и PDF | Работает | Gemini 2.5 Flash извлекает только видимые факты |
+| Юридическая генерация | Работает | DeepSeek создаёт полноценную структуру претензии |
+| Экспорт PDF | Работает | Рендерит документ и открывает системное меню отправки |
+| Временный номер | Demo | Демонстрация будущего пользовательского сценария |
+| Trial Card | Концепт | Концепция виртуальной карты для безопасного trial-периода |
+| Автоотправка писем и факсов | Roadmap | Требует внешней почтовой/факсовой интеграции |
+
+## Пользовательский сценарий
+
+1. Пользователь выбирает категорию или рассказывает проблему Солу.
+2. DeepSeek классифицирует ситуацию; Gemini используется как fallback маршрутизатора.
+3. Пользователь загружает фотографию, скриншот или PDF.
+4. Gemini 2.5 Flash извлекает компанию, сумму, дату, тип документа и исходный текст.
+5. Пользователь проверяет и редактирует распознанные поля.
+6. DeepSeek получает только подтверждённый текст и создаёт разделы претензии.
+7. Ready gate не считает документ готовым, пока обязательные поля требуют внимания.
+8. Приложение создаёт PDF, который можно сохранить или отправить.
+
+## Интерфейс
+
+| Главная | Доказательства |
+| --- | --- |
+| ![Главный экран BetterCallSaul](design-concepts/01-home.png) | ![Загрузка и проверка доказательств](design-concepts/02-evidence.png) |
+
+| Готовый документ | Инструменты |
+| --- | --- |
+| ![Готовая юридическая претензия](design-concepts/03-document.png) | ![Каталог инструментов](design-concepts/04-tools.png) |
+
+## Архитектура
+
+```mermaid
+flowchart LR
+    IOS[SwiftUI iOS] --> ROUTER[Сол: DeepSeek → Gemini fallback]
+    IOS --> VISION[Gemini 2.5 Flash\nфото/PDF → факты]
+    IOS --> TEXT[DeepSeek\nанализ и документ]
+    IOS --> PDF[PDF renderer + Share Sheet]
+    API[FastAPI] --> AUTH[Supabase Auth]
+    API --> RETRIEVAL[Hybrid legal retrieval]
+    INGEST[Official-source ingestion] --> EMB[Gemini Embedding 2\n768 dimensions]
+    EMB --> DB[(Supabase Postgres\npgvector + RLS)]
+    RETRIEVAL --> DB
 ```
 
-Fill it locally or through your team secret manager. Never commit the populated
-file.
+### iOS
 
-## Backend
+- SwiftUI, iOS 17+;
+- отдельные workflow для пяти категорий;
+- DeepSeek для классификации проблемы и юридического текста;
+- Gemini 2.5 Flash для изображений и fallback-классификации;
+- редактируемые извлечённые поля;
+- генерация и системная отправка PDF;
+- unit- и UI-тесты основных сценариев.
 
-Requirements: `uv` and Python 3.12. The repository locks the complete Python
-dependency graph in `backend/uv.lock`.
+### Backend и RAG
+
+- FastAPI и Python 3.12;
+- Supabase JWT verification;
+- закрытая схема `rag`;
+- Postgres full-text search + pgvector + RRF;
+- Gemini Embedding 2, размерность 768;
+- версионирование официальных источников;
+- staged/active revisions и атомарный activation gate;
+- возобновляемая ingestion pipeline при исчерпании квоты;
+- проверочная выборка из десяти retrieval-сценариев.
+
+В текущем hackathon demo-flow мобильное приложение обращается к Gemini и DeepSeek напрямую. Backend содержит защищённую основу авторизации, загрузки официального корпуса и retrieval. Для production ключи AI должны находиться только на backend, а мобильный клиент должен обращаться к нему через авторизованный API.
+
+## Структура репозитория
+
+```text
+.
+├── ios/                     # SwiftUI-приложение, тесты и XcodeGen-конфигурация
+├── backend/                 # FastAPI, ingestion и retrieval
+├── supabase/                # SQL-миграции, RLS и проверки RAG
+├── design-concepts/         # Актуальные UI-мокапы
+└── docs/                    # Архитектурные спецификации и планы реализации
+```
+
+## Быстрый запуск iOS
+
+### Требования
+
+- macOS;
+- Xcode с установленным iOS Simulator;
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen);
+- Gemini и DeepSeek API keys для живого AI-flow.
+
+### Настройка
+
+```bash
+git clone https://github.com/Lyamon4/BetterCallSoul.git
+cd BetterCallSoul/ios
+
+cp Config/Secrets.local.xcconfig.example Config/Secrets.local.xcconfig
+```
+
+Заполните локальный файл `Config/Secrets.local.xcconfig`:
+
+```xcconfig
+GEMINI_API_KEY = YOUR_GEMINI_KEY
+GEMINI_MODEL = gemini-2.5-flash
+DEEPSEEK_API_KEY = YOUR_DEEPSEEK_KEY
+DEEPSEEK_MODEL = deepseek-v4-pro
+```
+
+Файл с настоящими ключами добавлен в `.gitignore` и не должен попадать в commit.
+
+Сгенерируйте Xcode-проект и откройте его:
+
+```bash
+xcodegen generate
+open BetterCallSaul.xcodeproj
+```
+
+В Xcode выберите iPhone Simulator и запустите схему `BetterCallSaul`.
+
+### Запуск из терминала
+
+```bash
+cd ios
+xcodegen generate
+
+xcodebuild \
+  -project BetterCallSaul.xcodeproj \
+  -scheme BetterCallSaul \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  build
+```
+
+## Установка готового Simulator-билда
+
+1. Откройте [последний GitHub Release](https://github.com/Lyamon4/BetterCallSoul/releases/latest).
+2. Скачайте `BetterCallSaul-Simulator-Demo.app.zip`.
+3. Распакуйте архив.
+4. Запустите нужный iPhone Simulator.
+5. Выполните:
+
+```bash
+xcrun simctl install booted BetterCallSaul.app
+xcrun simctl launch booted kz.techvision.bettercallsaul
+```
+
+Simulator-билд работает только на Mac с установленным Xcode. Для установки на физический iPhone требуется Apple Developer signing и отдельный `.ipa`.
+
+## Запуск backend
+
+Требуются `uv` и Python 3.12. Полный dependency graph закреплён в `backend/uv.lock`.
 
 ```bash
 cd backend
@@ -27,12 +171,7 @@ cp .env.example .env
 uv run uvicorn bettercallsaul_api.main:app --reload
 ```
 
-The backend exposes:
-
-- `GET /health` without provider credentials;
-- `GET /v1/me` with a valid Supabase Bearer token.
-
-Required environment-variable names:
+Переменные окружения:
 
 ```dotenv
 ENVIRONMENT=development
@@ -44,79 +183,95 @@ GEMINI_EMBEDDING_MODEL=gemini-embedding-2
 GEMINI_EMBEDDING_DIMENSIONS=768
 ```
 
-`SUPABASE_SECRET_KEY` is backend-only. Never copy it into the iOS project,
-including `ios/Config/Secrets.local.xcconfig`, and never commit a populated
-`backend/.env`.
+`SUPABASE_SECRET_KEY` — только для backend. Не добавляйте его в iOS-конфигурацию.
 
-### Official legal ingestion
+Доступные endpoints основы API:
 
-The curated registry contains only reviewed Adilet, eGov, and gov.kz source
-codes. The command does not accept an arbitrary URL. A dry run fetches, parses,
-and chunks without calling Gemini or writing to Supabase:
+- `GET /health` — health check без авторизации;
+- `GET /v1/me` — проверка Supabase Bearer token.
+
+## Загрузка официального правового корпуса
+
+Registry принимает только проверенные коды источников Adilet, eGov и gov.kz. Произвольный URL передать нельзя.
+
+Dry run без Gemini и записи в Supabase:
 
 ```bash
 cd backend
 uv run bettercallsaul-ingest --all --dry-run
 ```
 
-Without `--activate`, a real run uploads a staged revision for manual review.
-Use the explicit flag only when the revision should pass the database gate and
-replace the current active revision:
+Создание staged revision:
 
 ```bash
 uv run bettercallsaul-ingest --source consumer_protection_law
+```
+
+Активация проверенной редакции:
+
+```bash
 uv run bettercallsaul-ingest --source consumer_protection_law --activate
 ```
 
-Ingestion is resumable. Provisions are embedded and persisted in bounded
-staging batches. If Gemini exhausts a rate or daily quota, the current run is
-closed as `paused` while the revision remains `staged`; no active revision is
-replaced. Run the same command again after the provider quota resets. The
-database returns the completed provision codes and the pipeline continues only
-with the missing provisions before performing the atomic activation gate.
-
-Every document embedding is generated by `gemini-embedding-2` with exactly 768
-dimensions. Provider keys are read only from the backend environment and are
-never included in source URLs, logs, iOS configuration, or database rows.
-
-Run the reviewed ten-scenario retrieval evaluation with:
+Retrieval evaluation:
 
 ```bash
 uv run bettercallsaul-evaluate --match-count 10
 ```
 
-Run the backend suite with:
+## Supabase
 
-```bash
-cd backend
-uv run pytest -q
-uv run pytest --cov=bettercallsaul_api --cov-report=term-missing -q
-```
-
-## Supabase RAG foundation
-
-Migrations are stored in `supabase/migrations` and have been applied to the
-connected project in this order:
+Миграции применяются по порядку:
 
 1. `20260720170000_rag_foundation.sql`
 2. `20260720171000_hybrid_legal_search.sql`
 3. `20260720204758_legal_ingestion_rpc.sql`
 4. `20260720220000_resumable_legal_ingestion.sql`
 
-The `public` case tables use owner-based RLS. The legal corpus lives in the
-private `rag` schema with access revoked from `PUBLIC`, `anon`, and
-`authenticated`. The `public.search_legal_chunks` security-definer RPC has a
-fixed empty `search_path` and is executable only by `service_role`.
-The five ingestion RPCs follow the same privilege boundary. New revisions stay
-staged until provision/chunk counts, structure, and vector dimensions pass an
-atomic finalization gate. Quota exhaustion pauses a resumable run; validation
-or provider failures reject only the staged revision. Both paths leave the last
-active revision untouched.
+Пользовательские таблицы защищены owner-based RLS. Правовой корпус хранится в закрытой схеме `rag`; доступ для `PUBLIC`, `anon` и `authenticated` отозван. Security-definer RPC доступны только `service_role`.
 
-To verify the database safely, run `supabase/tests/rag_foundation.sql` in the
-Supabase SQL editor or through the connected Supabase tooling. The test opens a
-transaction, checks the extension, tables, RLS, function security, and grants,
-then rolls back.
+Проверка схемы находится в `supabase/tests/rag_foundation.sql`. Она запускается внутри транзакции и откатывает изменения.
 
-Do not place user photos, PDFs, private evidence, or third-party legal summaries
-in the RAG corpus.
+## Тесты
+
+### iOS
+
+```bash
+cd ios
+xcodegen generate
+
+xcodebuild test \
+  -project BetterCallSaul.xcodeproj \
+  -scheme BetterCallSaul \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+```
+
+### Backend
+
+```bash
+cd backend
+uv sync --python 3.12
+uv run pytest -q
+uv run pytest --cov=bettercallsaul_api --cov-report=term-missing -q
+```
+
+## Приватность и безопасность
+
+- Исходные фотографии и PDF не добавляются в RAG-корпус.
+- DeepSeek получает подтверждённый пользователем текст, а не бинарные файлы.
+- Неуверенные распознанные значения остаются редактируемыми.
+- Ключи и `.env` исключены из Git.
+- Backend service-role key никогда не должен попадать в приложение.
+- Demo-билд с клиентскими AI keys нельзя публиковать как production-приложение.
+
+## Ограничения hackathon-версии
+
+- AI-flow зависит от доступности и квот Gemini/DeepSeek.
+- Готовый артефакт предназначен для iOS Simulator.
+- Временный номер и Trial Card являются демонстрацией/концептом.
+- Автоматическая физическая отправка писем, факсов и трекинг ответа требуют внешних интеграций.
+- Приложение помогает подготовить обращение, но не заменяет лицензированного юриста.
+
+## Правовой дисклеймер
+
+BetterCallSaul — технический прототип для Tech Vision 2026. Сгенерированные документы необходимо проверять перед отправкой. Проект не предоставляет юридическое представительство и не гарантирует исход спора.
