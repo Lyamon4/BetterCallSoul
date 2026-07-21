@@ -1,0 +1,35 @@
+[project]
+name = "bettercallsaul-api"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "beautifulsoup4>=4.15.0",
+  "fastapi",
+  "httpx",
+  "pydantic-settings",
+  "truststore>=0.10.4",
+  "uvicorn[standard]",
+]
+
+[dependency-groups]
+dev = [
+  "pytest",
+  "pytest-asyncio",
+  "pytest-cov",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+bettercallsaul-ingest = "bettercallsaul_api.ingestion.cli:main"
+bettercallsaul-evaluate = "bettercallsaul_api.evaluation_cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bettercallsaul_api"]
+
+[tool.pytest.ini_options]
+addopts = "-q --strict-markers --disable-warnings"
+testpaths = ["tests"]
+asyncio_mode = "auto"

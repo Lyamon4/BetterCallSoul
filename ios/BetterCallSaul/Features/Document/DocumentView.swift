@@ -1,0 +1,246 @@
+import SwiftUI
+
+struct DocumentView: View {
+    @Bindable var workflow: CaseWorkflowStore
+    @Environment(\.dismiss) private var dismiss
+    @State private var createdAt = Date()
+    @State private var shareURL: URL?
+    @State private var isShareSheetPresented = false
+    @State private var isExporting = false
+    @State private var notice: ExportNotice?
+
+    private var legalCase: LegalCase { workflow.currentCase }
+
+    private var draft: DocumentDraft {
+        workflow.resolvedDocumentDraft(senderName: "Алим", createdAt: createdAt)
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack {
+                    Button { dismiss() } label: {
+                        Label("Обращение", systemImage: "chevron.left")
+                    }
+                    Spacer()
+                    SaulMascotView(state: .celebrating, size: 48)
+                        .accessibilityHidden(false)
+                        .accessibilityLabel("Сол радуется готовому документу")
+                        .accessibilityIdentifier("documentCelebratingSaul")
+                    BCSStatusBadge(title: legalCase.status.rawValue, isActive: true)
+                }
+                .font(.bcsBody(15))
+                .foregroundStyle(BCSColor.ink)
+                .frame(minHeight: 44)
+
+                BCSEditorialTitle(text: "Претензия готова", size: 42)
+                    .padding(.top, 10)
+                Text("Проверьте данные перед отправкой.")
+                    .font(.bcsBody())
+                    .foregroundStyle(BCSColor.secondary)
+                    .padding(.top, 8)
+
+                documentPaper
+                    .padding(.top, 16)
+
+                reviewRow(icon: "checkmark", color: BCSColor.ink, title: "Данные добавлены")
+                    .padding(.top, 8)
+
+                if draft.requiresReview {
+                    reviewRow(
+                        icon: "exclamationmark",
+                        color: BCSColor.yellow,
+                        title: "\(reviewIssueCount) места требуют внимания",
+                        isWarning: true
+                    )
+                    .padding(.top, 6)
+                } else {
+                    reviewRow(icon: "checkmark", color: BCSColor.ink, title: "Факты проверены")
+                        .padding(.top, 6)
+                }
+
+                BCSPrimaryButton(
+                    isExporting ? "Создаём PDF…" : "Создать и отправить PDF",
+                    systemImage: "square.and.arrow.up"
+                ) {
+                    exportPDF()
+                }
+                .disabled(isExporting)
+                .accessibilityIdentifier("sendDocumentButton")
+                .padding(.top, 8)
+
+                Button("Скачать PDF") {
+                    exportPDF()
+                }
+                .disabled(isExporting)
+                .font(.bcsBody(16, weight: .medium))
+                .foregroundStyle(BCSColor.ink)
+                .underline()
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: 36)
+
+                HStack {
+                    Label("Всё по закону.", systemImage: "phone")
+                    Spacer()
+                    Text("S’all good")
+                        .italic()
+                }
+                .font(.system(size: 12, design: .serif))
+                .foregroundStyle(BCSColor.secondary)
+                .padding(.top, 8)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 112)
+        }
+        .background(BCSColor.canvas.ignoresSafeArea())
+        .navigationBarBackButtonHidden(true)
+        .sheet(isPresented: $isShareSheetPresented, onDismiss: { shareURL = nil }) {
+            if let shareURL {
+                ShareSheet(items: [shareURL]) { completed in
+                    if completed {
+                        workflow.markSent()
+                    }
+                }
+                .presentationDetents([.medium, .large])
+            }
+        }
+        .alert(item: $notice) { notice in
+            Alert(
+                title: Text(notice.title),
+                message: Text(notice.message),
+                dismissButton: .default(Text("Готово"))
+            )
+        }
+    }
+
+    private var documentPaper: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Image(systemName: "phone.fill")
+                        .padding(8)
+                        .overlay(RoundedRectangle(cornerRadius: 4).stroke(BCSColor.ink))
+                    Text("BetterCallSaul")
+                        .font(.system(size: 11, design: .serif))
+                    Text("Всё по закону.")
+                        .font(.bcsBody(9))
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("Исх. № \(draft.caseNumber)")
+                    Text(createdAt.formatted(date: .long, time: .omitted))
+                }
+                .font(.bcsMeta(8))
+            }
+
+            Rectangle()
+                .fill(BCSColor.yellow)
+                .frame(width: 34, height: 4)
+
+            Text(draft.title)
+                .font(.bcsEditorial(20))
+
+            Text("Кому: \(draft.recipient)")
+                .font(.bcsBody(10))
+
+            BCSDivider()
+
+            Text(draft.body)
+                .font(.bcsBody(10))
+                .lineSpacing(2)
+
+            Text(draft.reviewNotice)
+                .font(.bcsBody(10))
+                .lineSpacing(2)
+                .padding(10)
+                .background(BCSColor.paleYellow)
+
+            Text(attachmentText)
+                .font(.bcsBody(9))
+
+            BCSDivider()
+
+            HStack {
+                Text("С уважением,\n\(draft.senderName)")
+                    .font(.bcsBody(9))
+                Spacer()
+                Text("A. N.")
+                    .font(.system(size: 19, design: .serif))
+                    .italic()
+            }
+        }
+        .padding(16)
+        .background(BCSColor.surface)
+        .overlay(RoundedRectangle(cornerRadius: 8).stroke(BCSColor.divider))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .accessibilityElement(children: .contain)
+    }
+
+    private var reviewIssueCount: Int {
+        max(2, legalCase.extractedFields.filter(\.requiresReview).count)
+    }
+
+    private var attachmentText: String {
+        if draft.attachmentCount == 0 {
+            return "Приложения: отсутствуют."
+        }
+        return "Приложение: подтверждающие материалы — \(draft.attachmentCount) файл(а)."
+    }
+
+    private func exportPDF() {
+        isExporting = true
+        defer { isExporting = false }
+
+        do {
+            let url = try PDFDocumentRenderer().write(draft)
+            workflow.prepareDocument()
+            shareURL = url
+
+            if ProcessInfo.processInfo.arguments.contains("-ui-testing") {
+                notice = ExportNotice(
+                    title: "PDF создан",
+                    message: "Документ готов к отправке."
+                )
+            } else {
+                isShareSheetPresented = true
+            }
+        } catch {
+            notice = ExportNotice(
+                title: "Не удалось создать PDF",
+                message: error.localizedDescription
+            )
+        }
+    }
+
+    private func reviewRow(
+        icon: String,
+        color: Color,
+        title: String,
+        isWarning: Bool = false
+    ) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .bold))
+                .frame(width: 28, height: 28)
+                .background(color)
+                .foregroundStyle(isWarning ? BCSColor.ink : Color.white)
+                .clipShape(Circle())
+            Text(title)
+                .font(.bcsBody(15))
+            Spacer()
+            Image(systemName: "chevron.right")
+                .foregroundStyle(BCSColor.secondary)
+        }
+        .padding(.horizontal, 14)
+        .frame(minHeight: 44)
+        .background(BCSColor.surface)
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(BCSColor.divider))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+}
+
+private struct ExportNotice: Identifiable {
+    let id = UUID()
+    let title: String
+    let message: String
+}

@@ -1,0 +1,58 @@
+name: BetterCallSaul
+options:
+  bundleIdPrefix: kz.techvision
+  deploymentTarget:
+    iOS: "17.0"
+  generateEmptyDirectories: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+targets:
+  BetterCallSaul:
+    type: application
+    platform: iOS
+    configFiles:
+      Debug: Config/Secrets.xcconfig
+      Release: Config/Secrets.xcconfig
+    sources:
+      - path: BetterCallSaul
+    info:
+      path: BetterCallSaul/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: BetterCallSaul
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UIApplicationSupportsIndirectInputEvents: true
+        UILaunchScreen: {}
+        GeminiAPIKey: $(GEMINI_API_KEY)
+        GeminiModel: $(GEMINI_MODEL)
+        DeepSeekAPIKey: $(DEEPSEEK_API_KEY)
+        DeepSeekModel: $(DEEPSEEK_MODEL)
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: kz.techvision.bettercallsaul
+        TARGETED_DEVICE_FAMILY: "1"
+    scheme:
+      testTargets:
+        - BetterCallSaulTests
+        - BetterCallSaulUITests
+  BetterCallSaulTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: BetterCallSaulTests
+    dependencies:
+      - target: BetterCallSaul
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+  BetterCallSaulUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: BetterCallSaulUITests
+    dependencies:
+      - target: BetterCallSaul
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true

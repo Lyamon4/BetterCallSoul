@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "sources": [
+    {
+      "source_code": "consumer_protection_law",
+      "title": "О защите прав потребителей",
+      "authority": "Республика Казахстан",
+      "official_url": "https://adilet.zan.kz/rus/docs/Z100000274_",
+      "document_type": "law",
+      "parser": "adilet",
+      "categories": ["charge", "subscription", "product", "bill"],
+      "sectors": ["consumer"],
+      "adopted_on": "2010-05-04"
+    },
+    {
+      "source_code": "civil_code_special",
+      "title": "Гражданский кодекс Республики Казахстан (Особенная часть)",
+      "authority": "Республика Казахстан",
+      "official_url": "https://adilet.zan.kz/rus/docs/K990000409_",
+      "document_type": "code",
+      "parser": "adilet",
+      "categories": ["charge", "fine", "subscription", "product", "bill"],
+      "sectors": ["civil", "consumer"],
+      "adopted_on": "1999-07-01"
+    },
+    {
+      "source_code": "payments_law",
+      "title": "О платежах и платежных системах",
+      "authority": "Республика Казахстан",
+      "official_url": "https://adilet.zan.kz/rus/docs/Z1600000011",
+      "document_type": "law",
+      "parser": "adilet",
+      "categories": ["charge", "subscription", "bill"],
+      "sectors": ["payments", "banking"],
+      "adopted_on": "2016-07-26"
+    },
+    {
+      "source_code": "payment_card_rules",
+      "title": "Правила выпуска платежных карточек и обслуживания операций с их использованием",
+      "authority": "Национальный Банк Республики Казахстан",
+      "official_url": "https://adilet.zan.kz/rus/docs/V1600014299",
+      "document_type": "rules",
+      "parser": "adilet",
+      "categories": ["charge", "subscription"],
+      "sectors": ["payments", "banking"],
+      "adopted_on": "2016-08-31"
+    },
+    {
+      "source_code": "administrative_offences_code",
+      "title": "Об административных правонарушениях",
+      "authority": "Республика Казахстан",
+      "official_url": "https://adilet.zan.kz/rus/docs/K1400000235",
+      "document_type": "code",
+      "parser": "adilet",
+      "categories": ["fine"],
+      "sectors": ["administrative_offence"],
+      "adopted_on": "2014-07-05"
+    },
+    {
+      "source_code": "administrative_procedure_code",
+      "title": "Административный процедурно-процессуальный кодекс Республики Казахстан",
+      "authority": "Республика Казахстан",
+      "official_url": "https://adilet.zan.kz/rus/docs/K2000000350",
+      "document_type": "code",
+      "parser": "adilet",
+      "categories": ["fine"],
+      "sectors": ["administrative_procedure"],
+      "adopted_on": "2020-06-29"
+    },
+    {
+      "source_code": "egov_eotinish_guidance",
+      "title": "Электронные обращения",
+      "authority": "Электронное правительство Республики Казахстан",
+      "official_url": "https://egov.kz/cms/ru/mobile-services/e_app",
+      "document_type": "official_guidance",
+      "parser": "official_guidance",
+      "categories": ["fine"],
+      "sectors": ["administrative_procedure", "delivery"]
+    },
+    {
+      "source_code": "consumer_committee_guidance",
+      "title": "Официальная памятка по защите прав потребителей",
+      "authority": "Комитет по защите прав потребителей Министерства торговли и интеграции Республики Казахстан",
+      "official_url": "https://www.gov.kz/memleket/entities/mti-kzpp/press/news/details/678401?lang=ru",
+      "document_type": "official_guidance",
+      "parser": "official_guidance",
+      "categories": ["subscription", "product", "bill"],
+      "sectors": ["consumer", "delivery"]
+    }
+  ]
+}
