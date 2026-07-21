@@ -100,28 +100,18 @@ flowchart LR
 
 - macOS;
 - Xcode с установленным iOS Simulator;
-- [XcodeGen](https://github.com/yonaskolb/XcodeGen);
-- Gemini и DeepSeek API keys для живого AI-flow.
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen).
 
 ### Настройка
 
 ```bash
 git clone https://github.com/Lyamon4/BetterCallSoul.git
 cd BetterCallSoul/ios
-
-cp Config/Secrets.local.xcconfig.example Config/Secrets.local.xcconfig
 ```
 
-Заполните локальный файл `Config/Secrets.local.xcconfig`:
-
-```xcconfig
-GEMINI_API_KEY = YOUR_GEMINI_KEY
-GEMINI_MODEL = gemini-2.5-flash
-DEEPSEEK_API_KEY = YOUR_DEEPSEEK_KEY
-DEEPSEEK_MODEL = deepseek-v4-pro
-```
-
-Файл с настоящими ключами добавлен в `.gitignore` и не должен попадать в commit.
+Приватный hackathon-репозиторий уже содержит `Config/Secrets.local.xcconfig`
+с конфигурацией Gemini 2.5 Flash и DeepSeek V4 Pro. Для запуска iOS-приложения
+вводить AI-ключи вручную не нужно.
 
 Сгенерируйте Xcode-проект и откройте его:
 
