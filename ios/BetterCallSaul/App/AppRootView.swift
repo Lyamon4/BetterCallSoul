@@ -17,6 +17,8 @@ struct AppRootView: View {
                             EvidenceView(router: router, workflow: workflow)
                         case .aiAnalysis:
                             AIAnalysisView(router: router, workflow: workflow)
+                        case .signature:
+                            SignatureView(router: router, workflow: workflow)
                         case .document:
                             DocumentView(workflow: workflow)
                         }

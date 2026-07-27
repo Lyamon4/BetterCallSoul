@@ -66,10 +66,10 @@ struct AIAnalysisView: View {
                     .font(.bcsBody(15))
             }
             Spacer()
-            Text("3 из 4")
+            Text("3 из 5")
                 .font(.bcsMeta())
             HStack(spacing: 4) {
-                ForEach(0..<4, id: \.self) { index in
+                ForEach(0..<5, id: \.self) { index in
                     Capsule()
                         .fill(index < 3 ? BCSColor.yellow : BCSColor.divider)
                         .frame(width: 18, height: 4)
@@ -185,7 +185,7 @@ struct AIAnalysisView: View {
         Task {
             await workflow.generateAIDocument()
             isPreparingDocument = false
-            router.open(.document)
+            router.open(.signature)
         }
     }
 

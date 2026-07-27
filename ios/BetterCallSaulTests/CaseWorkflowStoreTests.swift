@@ -83,4 +83,41 @@ final class CaseWorkflowStoreTests: XCTestCase {
         store.markSent()
         XCTAssertEqual(store.currentCase.status, .sent)
     }
+
+    func testConfirmingSignatureStoresHandwrittenStrokes() {
+        let store = CaseWorkflowStore(seed: DemoFixtures.activeCase)
+        let signature = HandwrittenSignature(
+            strokes: [[CGPoint(x: 0.1, y: 0.2), CGPoint(x: 0.8, y: 0.7)]]
+        )
+
+        store.confirmSignature(signature)
+
+        XCTAssertEqual(store.signature, signature)
+    }
+
+    func testStartingAnotherCaseClearsConfirmedSignature() {
+        let store = CaseWorkflowStore(seed: DemoFixtures.activeCase)
+        store.confirmSignature(
+            HandwrittenSignature(
+                strokes: [[CGPoint(x: 0.1, y: 0.2), CGPoint(x: 0.8, y: 0.7)]]
+            )
+        )
+
+        store.start(type: .fine)
+
+        XCTAssertTrue(store.signature.isEmpty)
+    }
+
+    func testEditingEvidenceFieldInvalidatesConfirmedSignature() {
+        let store = CaseWorkflowStore(seed: DemoFixtures.activeCase)
+        store.confirmSignature(
+            HandwrittenSignature(
+                strokes: [[CGPoint(x: 0.1, y: 0.2), CGPoint(x: 0.8, y: 0.7)]]
+            )
+        )
+
+        store.updateField(label: "Сервис", value: "Другой сервис")
+
+        XCTAssertTrue(store.signature.isEmpty)
+    }
 }

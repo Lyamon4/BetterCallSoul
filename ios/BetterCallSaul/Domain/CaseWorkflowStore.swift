@@ -15,6 +15,7 @@ final class CaseWorkflowStore {
     private(set) var aiDocumentSections: AIDocumentSections?
     private(set) var aiState: AIWorkflowState = .idle
     private(set) var activeProvider: AIProvider = .local
+    private(set) var signature: HandwrittenSignature = .empty
 
     init(seed: LegalCase? = nil, services: AIServiceContainer = .localOnly) {
         currentCase = seed ?? Self.makeDraft(type: .subscription)
@@ -31,13 +32,18 @@ final class CaseWorkflowStore {
         aiDocumentSections = nil
         aiState = .idle
         activeProvider = .local
+        signature = .empty
     }
 
     func updateNarrative(_ value: String) {
+        if narrative != value {
+            signature = .empty
+        }
         narrative = value
     }
 
     func attachEvidence(_ imported: ImportedEvidence) {
+        signature = .empty
         evidencePayload = imported.payload
         currentCase.evidence = [imported.item]
         evidenceAnalysis = nil
@@ -47,12 +53,14 @@ final class CaseWorkflowStore {
     }
 
     func applyExtraction(evidence: EvidenceItem, fields: [ExtractedField]) {
+        signature = .empty
         currentCase.evidence = [evidence]
         currentCase.extractedFields = fields
         synchronizeCaseFacts()
     }
 
     func removeEvidence() {
+        signature = .empty
         currentCase.evidence = []
         currentCase.extractedFields = Self.emptyFields(for: currentCase.type)
         evidencePayload = nil
@@ -68,6 +76,9 @@ final class CaseWorkflowStore {
             return
         }
 
+        if currentCase.extractedFields[index].value != value {
+            signature = .empty
+        }
         currentCase.extractedFields[index].value = value
         currentCase.extractedFields[index].requiresReview = value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         synchronizeCaseFacts()
@@ -75,6 +86,11 @@ final class CaseWorkflowStore {
 
     func prepareDocument() {
         currentCase.status = .documentReady
+    }
+
+    func confirmSignature(_ signature: HandwrittenSignature) {
+        guard !signature.isEmpty else { return }
+        self.signature = signature
     }
 
     func setAnswer(questionID: String, value: String) {
@@ -136,6 +152,7 @@ final class CaseWorkflowStore {
     }
 
     func generateAIDocument() async {
+        signature = .empty
         if caseAnalysis == nil {
             do {
                 caseAnalysis = try await services.localTextGenerator.analyzeCase(makeCaseRequest())

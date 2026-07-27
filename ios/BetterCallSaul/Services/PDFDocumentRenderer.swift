@@ -5,7 +5,10 @@ import UIKit
 struct PDFDocumentRenderer {
     private let pageBounds = CGRect(x: 0, y: 0, width: 595, height: 842)
 
-    func render(_ draft: DocumentDraft) throws -> Data {
+    func render(
+        _ draft: DocumentDraft,
+        signature: HandwrittenSignature
+    ) throws -> Data {
         let format = UIGraphicsPDFRendererFormat()
         format.documentInfo = [
             kCGPDFContextTitle as String: draft.title,
@@ -15,21 +18,29 @@ struct PDFDocumentRenderer {
         let renderer = UIGraphicsPDFRenderer(bounds: pageBounds, format: format)
         return renderer.pdfData { context in
             context.beginPage()
-            draw(draft, in: context.cgContext)
+            draw(draft, signature: signature, in: context.cgContext)
         }
     }
 
-    func write(_ draft: DocumentDraft, to directory: URL = FileManager.default.temporaryDirectory) throws -> URL {
+    func write(
+        _ draft: DocumentDraft,
+        signature: HandwrittenSignature,
+        to directory: URL = FileManager.default.temporaryDirectory
+    ) throws -> URL {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let safeNumber = draft.caseNumber
             .replacingOccurrences(of: "/", with: "-")
             .replacingOccurrences(of: " ", with: "-")
         let url = directory.appendingPathComponent("BetterCallSaul-\(safeNumber).pdf")
-        try render(draft).write(to: url, options: .atomic)
+        try render(draft, signature: signature).write(to: url, options: .atomic)
         return url
     }
 
-    private func draw(_ draft: DocumentDraft, in context: CGContext) {
+    private func draw(
+        _ draft: DocumentDraft,
+        signature: HandwrittenSignature,
+        in context: CGContext
+    ) {
         UIColor(red: 0.98, green: 0.97, blue: 0.93, alpha: 1).setFill()
         context.fill(pageBounds)
 
@@ -95,18 +106,7 @@ struct PDFDocumentRenderer {
             lineSpacing: 5
         )
 
-        y += 166
-        UIColor(red: 1, green: 0.95, blue: 0.68, alpha: 1).setFill()
-        context.fill(CGRect(x: margin, y: y, width: contentWidth, height: 70))
-        drawText(
-            draft.reviewNotice,
-            frame: CGRect(x: margin + 16, y: y + 14, width: contentWidth - 32, height: 44),
-            font: .systemFont(ofSize: 10, weight: .medium),
-            color: .black,
-            lineSpacing: 3
-        )
-
-        y += 94
+        y += 174
         let attachmentText = draft.attachmentCount == 0
             ? "Приложения: отсутствуют."
             : "Приложение: подтверждающие материалы — \(draft.attachmentCount) файл(а)."
@@ -123,9 +123,20 @@ struct PDFDocumentRenderer {
         y += 24
         drawText(
             "С уважением,\n\(draft.senderName)",
-            frame: CGRect(x: margin, y: y, width: contentWidth, height: 42),
+            frame: CGRect(x: margin, y: y, width: contentWidth / 2, height: 42),
             font: .systemFont(ofSize: 11, weight: .regular),
             color: .black
+        )
+
+        draw(
+            signature,
+            in: CGRect(
+                x: pageBounds.width - margin - 160,
+                y: y - 6,
+                width: 160,
+                height: 52
+            ),
+            context: context
         )
 
         drawText(
@@ -135,6 +146,32 @@ struct PDFDocumentRenderer {
             color: .darkGray,
             alignment: .right
         )
+    }
+
+    private func draw(
+        _ signature: HandwrittenSignature,
+        in rect: CGRect,
+        context: CGContext
+    ) {
+        context.saveGState()
+        context.setStrokeColor(UIColor.black.cgColor)
+        context.setLineWidth(2)
+        context.setLineCap(.round)
+        context.setLineJoin(.round)
+
+        for points in signature.points(in: rect.size) where points.count > 1 {
+            context.beginPath()
+            context.move(
+                to: CGPoint(x: rect.minX + points[0].x, y: rect.minY + points[0].y)
+            )
+            for point in points.dropFirst() {
+                context.addLine(
+                    to: CGPoint(x: rect.minX + point.x, y: rect.minY + point.y)
+                )
+            }
+            context.strokePath()
+        }
+        context.restoreGState()
     }
 
     private func drawText(
