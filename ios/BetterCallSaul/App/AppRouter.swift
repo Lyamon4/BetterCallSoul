@@ -31,6 +31,7 @@ enum AppRoute: Hashable {
     case aiAnalysis
     case signature
     case document
+    case archivedDocument(UUID)
 }
 
 @MainActor

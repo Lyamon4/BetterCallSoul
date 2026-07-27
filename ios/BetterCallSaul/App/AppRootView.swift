@@ -4,6 +4,7 @@ struct AppRootView: View {
     @Bindable var router: AppRouter
     @Bindable var workflow: CaseWorkflowStore
     @Bindable var profile: UserProfileStore
+    @Bindable var archive: DocumentArchiveStore
     let problemClassifier: any ProblemClassifying
 
     var body: some View {
@@ -21,7 +22,20 @@ struct AppRootView: View {
                         case .signature:
                             SignatureView(router: router, workflow: workflow)
                         case .document:
-                            DocumentView(workflow: workflow, profile: profile)
+                            DocumentView(
+                                workflow: workflow,
+                                profile: profile,
+                                archive: archive
+                            )
+                        case let .archivedDocument(id):
+                            if let document = archive.document(id: id) {
+                                ArchivedDocumentView(
+                                    document: document,
+                                    archive: archive
+                                )
+                            } else {
+                                ArchiveMissingDocumentView()
+                            }
                         }
                     }
             }
@@ -44,12 +58,38 @@ struct AppRootView: View {
                 problemClassifier: problemClassifier
             )
         case .cases:
-            CasesView(legalCase: workflow.currentCase)
+            CasesView(router: router, archive: archive)
         case .tools:
             ToolsView(items: DemoFixtures.tools)
         case .profile:
             ProfileView(profile: profile)
         }
+    }
+}
+
+private struct ArchiveMissingDocumentView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "doc.badge.exclamationmark")
+                .font(.system(size: 38, weight: .light))
+            Text("Документ не найден")
+                .font(.bcsEditorial(30))
+            Text("Возможно, файл был удалён с устройства.")
+                .font(.bcsBody(15))
+                .foregroundStyle(BCSColor.secondary)
+                .multilineTextAlignment(.center)
+            Button("Вернуться к обращениям") {
+                dismiss()
+            }
+            .font(.bcsBody(15, weight: .semibold))
+        }
+        .foregroundStyle(BCSColor.ink)
+        .padding(28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(BCSColor.canvas)
+        .navigationBarBackButtonHidden(true)
     }
 }
 

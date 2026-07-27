@@ -3,12 +3,14 @@ import SwiftUI
 struct DocumentView: View {
     @Bindable var workflow: CaseWorkflowStore
     @Bindable var profile: UserProfileStore
+    @Bindable var archive: DocumentArchiveStore
     @Environment(\.dismiss) private var dismiss
     @State private var createdAt = Date()
     @State private var shareURL: URL?
     @State private var isShareSheetPresented = false
     @State private var isExporting = false
     @State private var notice: ExportNotice?
+    @State private var hasArchivedDocument = false
 
     private var legalCase: LegalCase { workflow.currentCase }
 
@@ -101,6 +103,9 @@ struct DocumentView: View {
         }
         .background(BCSColor.canvas.ignoresSafeArea())
         .navigationBarBackButtonHidden(true)
+        .onAppear {
+            archiveDocumentIfNeeded()
+        }
         .sheet(isPresented: $isShareSheetPresented, onDismiss: { shareURL = nil }) {
             if let shareURL {
                 ShareSheet(items: [shareURL]) { completed in
@@ -221,10 +226,15 @@ struct DocumentView: View {
         defer { isExporting = false }
 
         do {
-            let url = try PDFDocumentRenderer().write(
-                draft,
-                signature: workflow.signature
+            let document = try archive.save(
+                draft: draft,
+                signature: workflow.signature,
+                caseID: legalCase.id
             )
+            guard let url = archive.fileURL(for: document) else {
+                throw DocumentArchiveError.documentNotFound
+            }
+            hasArchivedDocument = true
             workflow.prepareDocument()
             shareURL = url
 
@@ -239,6 +249,25 @@ struct DocumentView: View {
         } catch {
             notice = ExportNotice(
                 title: "Не удалось создать PDF",
+                message: error.localizedDescription
+            )
+        }
+    }
+
+    private func archiveDocumentIfNeeded() {
+        guard !hasArchivedDocument, !workflow.signature.isEmpty else { return }
+
+        do {
+            try archive.save(
+                draft: draft,
+                signature: workflow.signature,
+                caseID: legalCase.id
+            )
+            hasArchivedDocument = true
+            workflow.prepareDocument()
+        } catch {
+            notice = ExportNotice(
+                title: "Не удалось сохранить обращение",
                 message: error.localizedDescription
             )
         }

@@ -1,88 +1,152 @@
 import SwiftUI
 
 struct CasesView: View {
-    let legalCase: LegalCase
+    let router: AppRouter
+    @Bindable var archive: DocumentArchiveStore
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 BCSEditorialTitle(text: "Обращения")
-                Text("Следим за сроками и следующими действиями.")
+                Text("Все готовые документы — в одном месте.")
                     .font(.bcsBody())
                     .foregroundStyle(BCSColor.secondary)
                     .padding(.top, 8)
 
-                VStack(alignment: .leading, spacing: 14) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 5) {
-                            Text(legalCase.title)
-                                .font(.bcsEditorial(26))
-                            Text(legalCase.counterparty)
-                                .font(.bcsBody(14))
-                                .foregroundStyle(BCSColor.secondary)
+                if archive.documents.isEmpty {
+                    emptyState
+                        .padding(.top, 54)
+                } else {
+                    VStack(spacing: 10) {
+                        ForEach(archive.documents) { document in
+                            archiveRow(document)
                         }
-                        Spacer()
-                        Text(amountText)
-                            .font(.bcsEditorial(24))
                     }
-
-                    BCSDivider()
-
-                    BCSStatusBadge(title: legalCase.status.rawValue, isActive: true)
-                    Text(deadlineText)
-                        .font(.bcsBody(14, weight: .medium))
-
-                    timelineRow(
-                        title: legalCase.status == .draft ? "Черновик создан" : "Документ подготовлен",
-                        detail: legalCase.number,
-                        active: legalCase.status == .draft
-                    )
-                    timelineRow(
-                        title: legalCase.status == .sent ? "Отправлено пользователем" : "Ожидается отправка",
-                        detail: legalCase.status == .sent ? "Следим за ответом" : "Подтвердите действие",
-                        active: legalCase.status != .sent
-                    )
+                    .padding(.top, 28)
                 }
-                .padding(.top, 30)
-
-                Spacer(minLength: 120)
             }
-            .padding(24)
-            .padding(.bottom, 80)
+            .padding(.horizontal, 20)
+            .padding(.top, 24)
+            .padding(.bottom, 112)
         }
         .background(BCSColor.canvas)
     }
 
-    private var amountText: String {
-        guard let amount = legalCase.amount else { return "—" }
-        let formatter = NumberFormatter()
-        formatter.locale = Locale(identifier: "ru_RU")
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 0
-        formatter.groupingSeparator = " "
-        return "\(formatter.string(from: NSNumber(value: amount)) ?? String(amount)) ₸"
-    }
+    private var emptyState: some View {
+        VStack(spacing: 18) {
+            ZStack(alignment: .bottomTrailing) {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(BCSColor.surface)
+                    .frame(width: 172, height: 138)
+                    .overlay {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Rectangle()
+                                .fill(BCSColor.yellow)
+                                .frame(width: 34, height: 4)
+                            ForEach([0.82, 0.62, 0.74], id: \.self) { width in
+                                Capsule()
+                                    .fill(BCSColor.divider)
+                                    .frame(width: 116 * width, height: 6)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(22)
+                    }
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(BCSColor.divider)
+                    )
 
-    private var deadlineText: String {
-        guard let deadline = legalCase.responseDeadline else {
-            return "Срок появится после отправки"
-        }
-        return "Ответ до \(deadline.formatted(.dateTime.day().month(.wide).locale(Locale(identifier: "ru_RU"))))"
-    }
-
-    private func timelineRow(title: String, detail: String, active: Bool) -> some View {
-        HStack(alignment: .top, spacing: 14) {
-            Circle()
-                .fill(active ? BCSColor.yellow : BCSColor.ink)
-                .frame(width: 9, height: 9)
-                .padding(.top, 5)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title)
-                    .font(.bcsBody(15, weight: .medium))
-                Text(detail)
-                    .font(.bcsBody(13))
-                    .foregroundStyle(BCSColor.secondary)
+                SaulMascotView(state: .idle, size: 82)
+                    .offset(x: 26, y: 20)
             }
+
+            VStack(spacing: 7) {
+                Text("Здесь появятся готовые документы")
+                    .font(.bcsBody(18, weight: .semibold))
+                    .multilineTextAlignment(.center)
+                Text("Создайте и подпишите обращение — мы сохраним PDF, чтобы вы могли вернуться к нему в любой момент.")
+                    .font(.bcsBody(14))
+                    .foregroundStyle(BCSColor.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(3)
+            }
+            .frame(maxWidth: 310)
         }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("archiveEmptyState")
+    }
+
+    private func archiveRow(_ document: ArchivedDocument) -> some View {
+        Button {
+            router.open(.archivedDocument(document.id))
+        } label: {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top, spacing: 14) {
+                    Image(systemName: "doc.text.fill")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(BCSColor.ink)
+                        .frame(width: 42, height: 42)
+                        .background(BCSColor.paleYellow)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(document.title)
+                            .font(.bcsBody(16, weight: .semibold))
+                            .foregroundStyle(BCSColor.ink)
+                            .multilineTextAlignment(.leading)
+                        Text(document.recipient.isEmpty ? "Получатель не указан" : document.recipient)
+                            .font(.bcsBody(13))
+                            .foregroundStyle(BCSColor.secondary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer(minLength: 4)
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(BCSColor.secondary)
+                        .padding(.top, 4)
+                }
+
+                BCSDivider()
+
+                HStack {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(document.caseNumber)
+                            .font(.bcsMeta(10))
+                        Text(savedDate(document.savedAt))
+                            .font(.bcsBody(12))
+                            .foregroundStyle(BCSColor.secondary)
+                    }
+                    Spacer()
+                    Text("PDF ГОТОВ")
+                        .font(.system(size: 9, weight: .semibold))
+                        .tracking(0.8)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 6)
+                        .background(BCSColor.paleGreen)
+                        .foregroundStyle(BCSColor.greenText)
+                        .clipShape(Capsule())
+                }
+            }
+            .padding(16)
+            .background(BCSColor.surface)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(BCSColor.divider)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(BCSPressButtonStyle())
+        .accessibilityIdentifier("archivedDocumentRow")
+    }
+
+    private func savedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ru_RU")
+        formatter.dateFormat = "d MMMM, HH:mm"
+        return "Сохранено \(formatter.string(from: date))"
     }
 }

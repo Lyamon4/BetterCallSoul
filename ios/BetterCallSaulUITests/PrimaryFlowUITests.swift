@@ -165,12 +165,32 @@ final class PrimaryFlowUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Нужен план?\nПозвони Солу."].exists)
     }
 
-    func testCasesShowsActiveCaseAndDeadline() {
+    func testCasesShowsEmptyArchiveBeforeFirstDocument() {
         app.buttons["tab.cases"].tap()
 
-        XCTAssertTrue(app.staticTexts["Возврат за подписку"].waitForExistence(timeout: 2))
-        XCTAssertTrue(app.staticTexts["24 900 ₸"].exists)
-        XCTAssertTrue(app.staticTexts["Ответ до 28 июля"].exists)
+        XCTAssertTrue(app.staticTexts["Обращения"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.staticTexts["Здесь появятся готовые документы"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["archiveEmptyState"].exists)
+    }
+
+    func testCompletedDocumentAppearsInArchiveAndOpensSavedPDF() {
+        app.buttons["caseType.subscription"].tap()
+        continueFromEvidenceToDocument()
+        XCTAssertTrue(app.staticTexts["Претензия готова"].waitForExistence(timeout: 3))
+
+        app.buttons["tab.cases"].tap()
+        XCTAssertTrue(
+            app.staticTexts["Требование об отмене подписки и возврате средств"]
+                .waitForExistence(timeout: 3)
+        )
+
+        let row = app.buttons["archivedDocumentRow"].firstMatch
+        XCTAssertTrue(row.exists)
+        row.tap()
+
+        XCTAssertTrue(app.staticTexts["Готовый документ"].waitForExistence(timeout: 2))
+        XCTAssertTrue(app.descendants(matching: .any)["archivedPDFPreview"].exists)
+        XCTAssertTrue(app.buttons["archiveDownloadButton"].exists)
     }
 
     func testProductionSurfaceHidesImplementationAndPrototypeControls() {
