@@ -28,4 +28,13 @@ final class AppRouterTests: XCTestCase {
 
         XCTAssertTrue(router.path.isEmpty)
     }
+
+    func testSignatureRouteCanPrecedeReadyDocument() {
+        let router = AppRouter()
+
+        router.open(.signature)
+        router.open(.document)
+
+        XCTAssertEqual(router.path, [.signature, .document])
+    }
 }

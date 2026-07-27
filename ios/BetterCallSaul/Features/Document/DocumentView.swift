@@ -43,8 +43,11 @@ struct DocumentView: View {
                 documentPaper
                     .padding(.top, 16)
 
-                reviewRow(icon: "checkmark", color: BCSColor.ink, title: "Данные добавлены")
+                reviewRow(icon: "checkmark", color: BCSColor.ink, title: "Подпись добавлена")
                     .padding(.top, 8)
+
+                reviewRow(icon: "checkmark", color: BCSColor.ink, title: "Данные добавлены")
+                    .padding(.top, 6)
 
                 if draft.requiresReview {
                     reviewRow(
@@ -54,6 +57,9 @@ struct DocumentView: View {
                         isWarning: true
                     )
                     .padding(.top, 6)
+
+                    reviewNoticePanel
+                        .padding(.top, 6)
                 } else {
                     reviewRow(icon: "checkmark", color: BCSColor.ink, title: "Факты проверены")
                         .padding(.top, 6)
@@ -149,12 +155,6 @@ struct DocumentView: View {
                 .font(.bcsBody(10))
                 .lineSpacing(2)
 
-            Text(draft.reviewNotice)
-                .font(.bcsBody(10))
-                .lineSpacing(2)
-                .padding(10)
-                .background(BCSColor.paleYellow)
-
             Text(attachmentText)
                 .font(.bcsBody(9))
 
@@ -164,9 +164,8 @@ struct DocumentView: View {
                 Text("С уважением,\n\(draft.senderName)")
                     .font(.bcsBody(9))
                 Spacer()
-                Text("A. N.")
-                    .font(.system(size: 19, design: .serif))
-                    .italic()
+                DocumentSignatureView(signature: workflow.signature, lineWidth: 1.6)
+                    .frame(width: 92, height: 42)
             }
         }
         .padding(16)
@@ -187,12 +186,44 @@ struct DocumentView: View {
         return "Приложение: подтверждающие материалы — \(draft.attachmentCount) файл(а)."
     }
 
+    private var reviewNoticePanel: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "exclamationmark.circle.fill")
+                .foregroundStyle(BCSColor.ink)
+                .padding(.top, 1)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Проверьте перед отправкой")
+                    .font(.bcsBody(14, weight: .semibold))
+                Text(draft.reviewNotice)
+                    .font(.bcsBody(13))
+                    .foregroundStyle(BCSColor.secondary)
+                    .lineSpacing(3)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(BCSColor.paleYellow)
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(BCSColor.divider))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .accessibilityIdentifier("documentReviewNotice")
+    }
+
     private func exportPDF() {
+        guard !workflow.signature.isEmpty else {
+            notice = ExportNotice(
+                title: "Добавьте подпись",
+                message: "Вернитесь на предыдущий экран и подпишите обращение."
+            )
+            return
+        }
         isExporting = true
         defer { isExporting = false }
 
         do {
-            let url = try PDFDocumentRenderer().write(draft)
+            let url = try PDFDocumentRenderer().write(
+                draft,
+                signature: workflow.signature
+            )
             workflow.prepareDocument()
             shareURL = url
 

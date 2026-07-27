@@ -172,10 +172,10 @@ struct EvidenceView: View {
                     .font(.bcsBody(15))
             }
             Spacer()
-            Text("2 из 4")
+            Text("2 из 5")
                 .font(.bcsMeta())
             HStack(spacing: 4) {
-                ForEach(0..<4, id: \.self) { index in
+                ForEach(0..<5, id: \.self) { index in
                     Capsule()
                         .fill(index < 2 ? BCSColor.yellow : BCSColor.divider)
                         .frame(width: 18, height: 4)

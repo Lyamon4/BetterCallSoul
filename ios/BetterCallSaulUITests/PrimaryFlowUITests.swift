@@ -129,6 +129,7 @@ final class PrimaryFlowUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Локальный режим"].exists)
         app.buttons["prepareAIDocumentButton"].tap()
 
+        signPreparedDocument()
         XCTAssertTrue(app.staticTexts["Претензия готова"].waitForExistence(timeout: 3))
         XCTAssertTrue(
             app.descendants(matching: .any)["documentCelebratingSaul"]
@@ -195,11 +196,14 @@ final class PrimaryFlowUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Разберём ситуацию"].waitForExistence(timeout: 3))
         capture(name: "03-ai-analysis")
         app.buttons["prepareAIDocumentButton"].tap()
+        XCTAssertTrue(app.staticTexts["Оставьте подпись"].waitForExistence(timeout: 3))
+        capture(name: "04-signature")
+        drawSignatureAndContinue()
         XCTAssertTrue(app.staticTexts["Претензия готова"].waitForExistence(timeout: 3))
-        capture(name: "04-document")
+        capture(name: "05-document")
 
         app.buttons["tab.tools"].tap()
-        capture(name: "05-tools")
+        capture(name: "06-tools")
     }
 
     func testLargeTextKeepsPrimaryActionReachable() {
@@ -227,7 +231,28 @@ final class PrimaryFlowUITests: XCTestCase {
         tapContinueToAIAnalysis()
         XCTAssertTrue(app.staticTexts["Разберём ситуацию"].waitForExistence(timeout: 3))
         app.buttons["prepareAIDocumentButton"].tap()
+        signPreparedDocument()
         XCTAssertTrue(app.staticTexts["Претензия готова"].waitForExistence(timeout: 3))
+    }
+
+    private func signPreparedDocument() {
+        XCTAssertTrue(app.staticTexts["Оставьте подпись"].waitForExistence(timeout: 3))
+        let confirmButton = app.buttons["confirmSignatureButton"]
+        XCTAssertTrue(confirmButton.exists)
+        XCTAssertFalse(confirmButton.isEnabled)
+        drawSignatureAndContinue()
+    }
+
+    private func drawSignatureAndContinue() {
+        let canvas = app.otherElements["signatureCanvas"]
+        XCTAssertTrue(canvas.waitForExistence(timeout: 2))
+        let start = canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.18, dy: 0.65))
+        let end = canvas.coordinate(withNormalizedOffset: CGVector(dx: 0.82, dy: 0.35))
+        start.press(forDuration: 0.1, thenDragTo: end)
+
+        let confirmButton = app.buttons["confirmSignatureButton"]
+        XCTAssertTrue(confirmButton.isEnabled)
+        confirmButton.tap()
     }
 
     private func tapContinueToAIAnalysis() {
