@@ -50,9 +50,6 @@ struct HomeView: View {
 
                 caseTypes
                     .padding(.top, 16)
-
-                activeCase
-                    .padding(.top, 12)
             }
             .padding(.horizontal, 20)
             .padding(.top, 18)
@@ -141,47 +138,6 @@ struct HomeView: View {
         }
     }
 
-    private var activeCase: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("АКТИВНОЕ ОБРАЩЕНИЕ")
-                .font(.system(size: 11, weight: .medium))
-                .tracking(1)
-                .foregroundStyle(BCSColor.secondary)
-
-            HStack(spacing: 8) {
-                Rectangle()
-                    .fill(BCSColor.yellow)
-                    .frame(width: 3)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(workflow.currentCase.title)
-                        .font(.bcsEditorial(20))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.78)
-                    Text(workflow.currentCase.number)
-                        .font(.bcsMeta(10))
-                        .foregroundStyle(BCSColor.secondary)
-                }
-                .layoutPriority(1)
-                Spacer()
-                VStack(alignment: .trailing, spacing: 8) {
-                    BCSStatusBadge(title: workflow.currentCase.status.rawValue, isActive: true)
-                    Text(activeCaseDeadline)
-                        .font(.bcsBody(13))
-                        .foregroundStyle(BCSColor.secondary)
-                }
-            }
-            .frame(minHeight: 62)
-            .accessibilityElement(children: .combine)
-            .accessibilityIdentifier("activeCaseCard")
-
-            Text("S’all good")
-                .font(.system(size: 12, weight: .regular, design: .serif))
-                .italic()
-                .foregroundStyle(BCSColor.secondary.opacity(0.6))
-                .frame(maxWidth: .infinity)
-        }
-    }
-
     private func beginCase(_ type: CaseType) {
         closeSaulAssistant()
         workflow.start(type: type)
@@ -218,12 +174,5 @@ struct HomeView: View {
             router.open(.evidence)
             routingTask = nil
         }
-    }
-
-    private var activeCaseDeadline: String {
-        guard let deadline = workflow.currentCase.responseDeadline else {
-            return "Черновик"
-        }
-        return "до \(deadline.formatted(.dateTime.day().month(.wide).locale(Locale(identifier: "ru_RU"))))"
     }
 }
