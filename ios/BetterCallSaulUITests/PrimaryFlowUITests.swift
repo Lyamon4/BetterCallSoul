@@ -15,7 +15,8 @@ final class PrimaryFlowUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Что случилось?"].waitForExistence(timeout: 3))
         XCTAssertTrue(app.buttons["createCaseButton"].exists)
         XCTAssertTrue(app.buttons["caseType.subscription"].exists)
-        XCTAssertTrue(app.staticTexts["activeCaseCard"].exists)
+        XCTAssertFalse(app.descendants(matching: .any)["activeCaseCard"].exists)
+        XCTAssertFalse(app.staticTexts["АКТИВНОЕ ОБРАЩЕНИЕ"].exists)
     }
 
     func testHomeSaulRoutesProblemToEvidence() {
