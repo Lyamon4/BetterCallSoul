@@ -186,6 +186,25 @@ final class PrimaryFlowUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["КОНЦЕПТ"].exists)
     }
 
+    func testProfileNameCanBeEditedAndUpdatesHomeGreeting() {
+        app.buttons["tab.profile"].tap()
+        XCTAssertTrue(app.staticTexts["Профиль"].waitForExistence(timeout: 2))
+
+        let nameField = app.textFields["profileNameField"]
+        XCTAssertTrue(nameField.waitForExistence(timeout: 2))
+        nameField.tap()
+        app.buttons["clearProfileNameButton"].tap()
+        nameField.typeText("Диана")
+
+        let saveButton = app.buttons["saveProfileNameButton"]
+        XCTAssertTrue(saveButton.isEnabled)
+        saveButton.tap()
+        XCTAssertTrue(app.staticTexts["Имя сохранено"].waitForExistence(timeout: 2))
+
+        app.buttons["tab.home"].tap()
+        XCTAssertTrue(app.staticTexts["Добрый вечер, Диана"].waitForExistence(timeout: 2))
+    }
+
     func testPrimaryScreensCaptureStableReferences() {
         capture(name: "01-home")
 

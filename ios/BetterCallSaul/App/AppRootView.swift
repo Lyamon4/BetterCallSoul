@@ -3,6 +3,7 @@ import SwiftUI
 struct AppRootView: View {
     @Bindable var router: AppRouter
     @Bindable var workflow: CaseWorkflowStore
+    @Bindable var profile: UserProfileStore
     let problemClassifier: any ProblemClassifying
 
     var body: some View {
@@ -20,7 +21,7 @@ struct AppRootView: View {
                         case .signature:
                             SignatureView(router: router, workflow: workflow)
                         case .document:
-                            DocumentView(workflow: workflow)
+                            DocumentView(workflow: workflow, profile: profile)
                         }
                     }
             }
@@ -39,6 +40,7 @@ struct AppRootView: View {
             HomeView(
                 router: router,
                 workflow: workflow,
+                profile: profile,
                 problemClassifier: problemClassifier
             )
         case .cases:
@@ -46,7 +48,7 @@ struct AppRootView: View {
         case .tools:
             ToolsView(items: DemoFixtures.tools)
         case .profile:
-            ProfileView()
+            ProfileView(profile: profile)
         }
     }
 }

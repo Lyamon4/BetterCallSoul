@@ -3,6 +3,7 @@ import SwiftUI
 struct HomeView: View {
     let router: AppRouter
     @Bindable var workflow: CaseWorkflowStore
+    @Bindable var profile: UserProfileStore
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isVisible = false
     @State private var isSaulAssistantPresented = false
@@ -12,10 +13,12 @@ struct HomeView: View {
     init(
         router: AppRouter,
         workflow: CaseWorkflowStore,
+        profile: UserProfileStore,
         problemClassifier: any ProblemClassifying
     ) {
         self.router = router
         self.workflow = workflow
+        self.profile = profile
         _assistant = State(
             initialValue: SaulAssistantViewModel(classifier: problemClassifier)
         )
@@ -27,7 +30,7 @@ struct HomeView: View {
                 brandHeader
                     .padding(.bottom, 16)
 
-                Text("Добрый вечер, Алим")
+                Text("Добрый вечер, \(profile.name)")
                     .font(.bcsBody(17))
                     .foregroundStyle(BCSColor.secondary)
 
