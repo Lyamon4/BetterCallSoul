@@ -2,19 +2,16 @@ import SwiftUI
 
 @main
 struct BetterCallSaulApp: App {
-    @State private var router = AppRouter()
+    @State private var router: AppRouter
     @State private var workflow: CaseWorkflowStore
     private let problemClassifier: any ProblemClassifying
 
     init() {
-        let services: AIServiceContainer
-        if ProcessInfo.processInfo.arguments.contains("-ui-testing") {
-            services = ProcessInfo.processInfo.arguments.contains("-saul-clarification-testing")
-                ? .uiTestingWithClarification
-                : .uiTesting
-        } else {
-            services = .bundled()
-        }
+        let scenario = AppLaunchScenario(arguments: ProcessInfo.processInfo.arguments)
+        let services = scenario.services
+        let router = AppRouter()
+        router.path = scenario.initialPath
+        _router = State(initialValue: router)
         _workflow = State(
             initialValue: CaseWorkflowStore(seed: DemoFixtures.activeCase, services: services)
         )
