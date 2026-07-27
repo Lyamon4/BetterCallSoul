@@ -2,6 +2,7 @@ import SwiftUI
 
 struct DocumentView: View {
     @Bindable var workflow: CaseWorkflowStore
+    @Bindable var profile: UserProfileStore
     @Environment(\.dismiss) private var dismiss
     @State private var createdAt = Date()
     @State private var shareURL: URL?
@@ -12,7 +13,7 @@ struct DocumentView: View {
     private var legalCase: LegalCase { workflow.currentCase }
 
     private var draft: DocumentDraft {
-        workflow.resolvedDocumentDraft(senderName: "Алим", createdAt: createdAt)
+        workflow.resolvedDocumentDraft(senderName: profile.name, createdAt: createdAt)
     }
 
     var body: some View {

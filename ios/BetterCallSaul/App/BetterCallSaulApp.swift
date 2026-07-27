@@ -4,6 +4,7 @@ import SwiftUI
 struct BetterCallSaulApp: App {
     @State private var router: AppRouter
     @State private var workflow: CaseWorkflowStore
+    @State private var profile: UserProfileStore
     private let problemClassifier: any ProblemClassifying
 
     init() {
@@ -15,6 +16,15 @@ struct BetterCallSaulApp: App {
         _workflow = State(
             initialValue: CaseWorkflowStore(seed: DemoFixtures.activeCase, services: services)
         )
+        let profileStorage: UserDefaults
+        if scenario == .uiTesting || scenario == .uiTestingWithClarification {
+            let suiteName = "BetterCallSaul.UITesting.Profile"
+            profileStorage = UserDefaults(suiteName: suiteName)!
+            profileStorage.removePersistentDomain(forName: suiteName)
+        } else {
+            profileStorage = .standard
+        }
+        _profile = State(initialValue: UserProfileStore(storage: profileStorage))
         problemClassifier = services.problemClassifier
     }
 
@@ -23,6 +33,7 @@ struct BetterCallSaulApp: App {
             AppRootView(
                 router: router,
                 workflow: workflow,
+                profile: profile,
                 problemClassifier: problemClassifier
             )
         }
